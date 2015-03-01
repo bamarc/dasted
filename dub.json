@@ -1,0 +1,24 @@
+{
+	"name": "dasted",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2015, cleem",
+	"authors": ["cleem"],
+	"targetPath": "./bin",
+	"sourcePaths": ["src", "./thirdparty/DCD/src/conversion"],
+	"sourceFiles": [
+		"./thirdparty/DCD/src/actypes.d",
+		"./thirdparty/DCD/src/actypes.d",
+		"./thirdparty/DCD/src/constants.d",
+		"./thirdparty/DCD/src/modulecache.d",
+		"./thirdparty/DCD/src/string_interning.d",
+		"./thirdparty/DCD/src/semantic.d"
+	],
+	"dependencies": {
+		"dasted:libdparse": "~master",
+		"dasted:msgpack-d": "~master"
+	},
+	"subPackages": [
+		"./thirdparty/DCD/libdparse/",
+		"./thirdparty/DCD/msgpack-d/"
+	]
+}
