@@ -28,15 +28,30 @@ enum MessageType : ubyte
     FIND_DECLARATION,
 }
 
-struct Request
+struct Request(MessageType T)
 {
-    MessageType type = type.WRONG_TYPE;
+    MessageType type = MessageType.WRONG_TYPE;
+}
+
+struct Request(MessageType T : MessageType.COMPLETE)
+{
+    MessageType type = T;
     string src;
     uint cursor;
 }
 
-struct Reply
+struct Request(MessageType T : MessageType.FIND_DECLARATION)
 {
-    MessageType type = type.WRONG_TYPE;
+    enum type = T;
+}
+
+struct Reply(MessageType T)
+{
+    enum type = MessageType.WRONG_TYPE;
+}
+
+struct Reply(MessageType T : MessageType.COMPLETE)
+{
+    enum type = type.COMPLETE;
     Symbol[] symbols;
 }

@@ -7,8 +7,19 @@ import msgpack;
 import std.d.ast;
 import std.d.parser;
 
+
+class DastedException : Exception
+{
+    @safe pure nothrow
+    this(string s, string fn = __FILE__, size_t ln = __LINE__)
+    {
+        super(s, fn, ln);
+    }
+}
+
 class Dasted
 {
+
     this()
     {
         socket = new TcpSocket(AddressFamily.INET);
@@ -35,23 +46,55 @@ class Dasted
                 socket.close();
             }
             client.blocking = true;
-            auto req = receiveRequest(client);
-            auto rep = onRequest(req);
-            sendReply(client, rep);
+            process(client);
         }
     }
 
 private:
 
-    Request receiveRequest(Socket s)
+    void onMessage(T)(const T req)
     {
-        receive(s);
-        Request req;
-        msgpack.unpack(inbuffer[uint.sizeof..$], req);
-        return req;
+        throw new DastedException("unsupported request type (not implemented yet)");
     }
 
-    void sendReply(Socket s, Reply rep)
+    template GenerateTypeSwitch(T)
+    {
+        static string gen(string e)
+        {
+            return " onMessage(msg.as!(Request!(" ~ T.stringof ~ "." ~ e ~ "))());";
+        }
+
+        static string gen()
+        {
+            import std.traits;
+            import std.conv;
+            string res;
+            foreach (e; EnumMembers!T) {
+                res ~= "case " ~ T.stringof ~ "." ~ to!string(e) ~ ": " ~ gen(to!string(e)) ~ "break;\n";
+            }
+            return res;
+        }
+        enum GenerateTypeSwitch = gen();
+    }
+
+    void process(Socket s)
+    {
+        receive(s);
+        auto pkg = unpack(inbuffer[uint.sizeof..$]);
+        enforce(pkg.length == 1);
+        enforce(pkg.type == pkg.type.array);
+        auto valArr = pkg.via.array;
+        enforce(valArr.length == 2);
+        MessageType type = valArr[0].as!MessageType();
+        auto msg = valArr[1];
+        pragma(msg, GenerateTypeSwitch!(MessageType));
+        final switch (type)
+        {
+            mixin(GenerateTypeSwitch!(MessageType));
+        }
+    }
+
+    void sendReply(T)(Socket s, const ref T rep)
     {
         outbuffer = msgpack.pack(rep);
         send(s);
@@ -81,24 +124,6 @@ private:
         uint length = cast(uint)outbuffer.length;
         s.send((cast(ubyte*) &length)[0..length.sizeof]);
         s.send(outbuffer);
-    }
-
-    Reply onRequest(Request req)
-    {
-        final switch (req.type)
-        {
-            case req.type.WRONG_TYPE: return Reply();
-            case req.type.COMPLETE: return onComplete(req);
-            case req.type.FIND_DECLARATION: return onFindDeclaration(req);
-        }
-    }
-    Reply onComplete(Request req)
-    {
-        return Reply();
-    }
-    Reply onFindDeclaration(Request req)
-    {
-        return Reply();
     }
 
     TcpSocket socket;
