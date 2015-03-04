@@ -35,7 +35,7 @@ struct Request(MessageType T)
 
 struct Request(MessageType T : MessageType.COMPLETE)
 {
-    MessageType type = T;
+    enum type = T;
     string src;
     uint cursor;
 }
@@ -43,6 +43,8 @@ struct Request(MessageType T : MessageType.COMPLETE)
 struct Request(MessageType T : MessageType.FIND_DECLARATION)
 {
     enum type = T;
+    string src;
+    uint cursor;
 }
 
 struct Reply(MessageType T)
@@ -52,6 +54,6 @@ struct Reply(MessageType T)
 
 struct Reply(MessageType T : MessageType.COMPLETE)
 {
-    enum type = type.COMPLETE;
+    enum type = T;
     Symbol[] symbols;
 }

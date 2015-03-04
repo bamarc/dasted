@@ -1,11 +1,16 @@
 module dasted;
 import message_struct;
+import dcd_bridge;
+
 import std.exception;
-import std.outbuffer;
 import std.socket;
+import std.stdio;
+
 import msgpack;
 import std.d.ast;
 import std.d.parser;
+
+import autocomplete;
 
 
 class DastedException : Exception
@@ -39,14 +44,21 @@ class Dasted
         socket.listen(0);
         while (true)
         {
-            auto client = socket.accept();
-            scope (exit)
+            try
             {
-                socket.shutdown(SocketShutdown.BOTH);
-                socket.close();
+                auto client = socket.accept();
+                scope (exit)
+                {
+                    socket.shutdown(SocketShutdown.BOTH);
+                    socket.close();
+                }
+                client.blocking = true;
+                process(client);
             }
-            client.blocking = true;
-            process(client);
+            catch (Exception ex)
+            {
+                writeln("Exception: ", ex.msg);
+            }
         }
     }
 
@@ -55,6 +67,14 @@ private:
     void onMessage(T)(const T req)
     {
         throw new DastedException("unsupported request type (not implemented yet)");
+    }
+
+    void onMessage(const Request!(MessageType.COMPLETE) req)
+    {
+        auto dcdReq = toDcdRequest(req);
+        auto resp = complete(dcdReq);
+        auto rep = fromDcdResponse!(MessageType.COMPLETE)(resp);
+        sendReply(rep);
     }
 
     template GenerateTypeSwitch(T)
@@ -87,17 +107,16 @@ private:
         enforce(valArr.length == 2);
         MessageType type = valArr[0].as!MessageType();
         auto msg = valArr[1];
-        pragma(msg, GenerateTypeSwitch!(MessageType));
         final switch (type)
         {
             mixin(GenerateTypeSwitch!(MessageType));
         }
+        send(s);
     }
 
-    void sendReply(T)(Socket s, const ref T rep)
+    void sendReply(T)(const ref T rep)
     {
         outbuffer = msgpack.pack(rep);
-        send(s);
     }
 
     void receive(Socket s)

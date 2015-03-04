@@ -1,6 +1,9 @@
 import std.stdio;
 
+import dasted;
+
 void main()
 {
-	writeln("Edit source/app.d to start your project.");
+    Dasted d = new Dasted;
+    d.run(9168);
 }
