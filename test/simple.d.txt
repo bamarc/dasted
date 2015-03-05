@@ -1,0 +1,48 @@
+import std.stdio;
+
+string foo()
+{
+    return "Hello";
+}
+
+string foo(string user)
+{
+    return "Hello" ~ user;
+}
+
+
+class UsersBase
+{
+    string[int] users;
+
+    void save(int i, string user)
+    {
+        users[i] = user;
+    }
+
+    string get(int i) const
+    {
+        auto ptr = i in users;
+        enforce(ptr, "User not found");
+        return *ptr;
+    }
+
+    string get(int i, string defaultUser) const
+    {
+        auto ptr = i in users;
+        return ptr ? *ptr : defaultUser;
+    }
+}
+
+static auto base = new UsersBase;
+
+string foo(int i)
+{
+    return base.get(i);
+}
+
+int main()
+{
+    writeln(foo(15));
+    writeln("Test");
+}
