@@ -12,7 +12,7 @@ alias CompletionKind SymbolType;
 
 struct Symbol
 {
-    SymbolType type;
+    ubyte type;
     string name;
     Location location;
     string[] qualifiers;

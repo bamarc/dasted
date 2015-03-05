@@ -5,6 +5,7 @@ import dcd_bridge;
 import std.exception;
 import std.socket;
 import std.stdio;
+import std.conv;
 
 import msgpack;
 import std.d.ast;
@@ -49,15 +50,15 @@ class Dasted
                 auto client = socket.accept();
                 scope (exit)
                 {
-                    socket.shutdown(SocketShutdown.BOTH);
-                    socket.close();
+                    client.shutdown(SocketShutdown.BOTH);
+                    client.close();
                 }
                 client.blocking = true;
                 process(client);
             }
             catch (Exception ex)
             {
-                writeln("Exception: ", ex.msg);
+                stderr.writeln("Exception: ", ex.msg);
             }
         }
     }
@@ -101,10 +102,10 @@ private:
     {
         receive(s);
         auto pkg = unpack(inbuffer[uint.sizeof..$]);
-        enforce(pkg.length == 1);
-        enforce(pkg.type == pkg.type.array);
+        enforce(pkg.length == 2, "Unpacked length " ~ to!string(pkg.length));
+        enforce(pkg.type == pkg.type.array, "Unpacked type " ~ to!string(pkg.type.array));
         auto valArr = pkg.via.array;
-        enforce(valArr.length == 2);
+        enforce(valArr.length == 2, "Unpacked value length " ~ to!string(valArr.length));
         MessageType type = valArr[0].as!MessageType();
         auto msg = valArr[1];
         final switch (type)
@@ -131,6 +132,7 @@ private:
             if (length == length.max && offset >= length.sizeof) {
                 (cast(ubyte*) &length)[0..length.sizeof] = inbuffer[0..length.sizeof];
                 enforce(length < MAX_MESSAGE_SIZE, "message buffer overflow");
+                length += length.sizeof;
                 inbuffer.length = length;
             }
         } while (offset < length);
@@ -139,7 +141,7 @@ private:
 
     void send(Socket s)
     {
-        enforce(outbuffer.length > uint.sizeof, "outbuffer is too small");
+        enforce(outbuffer.length, "outbuffer is empty");
         uint length = cast(uint)outbuffer.length;
         s.send((cast(ubyte*) &length)[0..length.sizeof]);
         s.send(outbuffer);
