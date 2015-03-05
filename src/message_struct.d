@@ -57,3 +57,9 @@ struct Reply(MessageType T : MessageType.COMPLETE)
     enum type = T;
     Symbol[] symbols;
 }
+
+struct Reply(MessageType T : MessageType.FIND_DECLARATION)
+{
+    enum type = T;
+    Symbol symbol;
+}

@@ -42,3 +42,11 @@ Reply!T fromDcdResponse(MessageType T : MessageType.COMPLETE)(const ref Autocomp
     }
     return res;
 }
+
+Reply!T fromDcdResponse(MessageType T : MessageType.FIND_DECLARATION)(const ref AutocompleteResponse response)
+{
+    Reply!T res;
+    res.symbol.location.filename = response.symbolFilePath;
+    res.symbol.location.cursor = to!(typeof(res.symbol.location.cursor))(response.symbolLocation);
+    return res;
+}

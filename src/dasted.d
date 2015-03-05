@@ -78,6 +78,14 @@ private:
         sendReply(rep);
     }
 
+    void onMessage(const Request!(MessageType.FIND_DECLARATION) req)
+    {
+        auto dcdReq = toDcdRequest(req);
+        auto resp = complete(dcdReq);
+        auto rep = fromDcdResponse!(MessageType.FIND_DECLARATION)(resp);
+        sendReply(rep);
+    }
+
     template GenerateTypeSwitch(T)
     {
         static string gen(string e)
