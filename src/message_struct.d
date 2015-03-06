@@ -27,6 +27,7 @@ enum MessageType : ubyte
     COMPLETE,
     FIND_DECLARATION,
     ADD_IMPORT_PATHS,
+    GET_DOC,
 }
 
 struct Request(MessageType T)
@@ -54,6 +55,13 @@ struct Request(MessageType T : MessageType.ADD_IMPORT_PATHS)
     string[] paths;
 }
 
+struct Request(MessageType T : MessageType.GET_DOC)
+{
+    enum type = T;
+    string src;
+    uint cursor;
+}
+
 struct Reply(MessageType T)
 {
     enum type = MessageType.WRONG_TYPE;
@@ -74,4 +82,10 @@ struct Reply(MessageType T : MessageType.FIND_DECLARATION)
 struct Reply(MessageType T : MessageType.ADD_IMPORT_PATHS)
 {
     enum type = T;
+}
+
+struct Reply(MessageType T : MessageType.GET_DOC)
+{
+    enum type = T;
+    Symbol[] symbols;
 }

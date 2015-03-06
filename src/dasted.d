@@ -93,6 +93,14 @@ private:
         sendReply(rep);
     }
 
+    void onMessage(const Request!(MessageType.GET_DOC) req)
+    {
+        auto dcdReq = toDcdRequest(req);
+        auto resp = getDoc(dcdReq);
+        auto rep = fromDcdResponse!(MessageType.GET_DOC)(resp);
+        sendReply(rep);
+    }
+
     template GenerateTypeSwitch(T)
     {
         static string gen(string e)
