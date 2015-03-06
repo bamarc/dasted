@@ -86,6 +86,13 @@ private:
         sendReply(rep);
     }
 
+    void onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
+    {
+        addImportPaths(req.paths);
+        Reply!(MessageType.ADD_IMPORT_PATHS) rep;
+        sendReply(rep);
+    }
+
     template GenerateTypeSwitch(T)
     {
         static string gen(string e)

@@ -26,6 +26,7 @@ enum MessageType : ubyte
     WRONG_TYPE = 0,
     COMPLETE,
     FIND_DECLARATION,
+    ADD_IMPORT_PATHS,
 }
 
 struct Request(MessageType T)
@@ -47,6 +48,12 @@ struct Request(MessageType T : MessageType.FIND_DECLARATION)
     uint cursor;
 }
 
+struct Request(MessageType T : MessageType.ADD_IMPORT_PATHS)
+{
+    enum type = T;
+    string[] paths;
+}
+
 struct Reply(MessageType T)
 {
     enum type = MessageType.WRONG_TYPE;
@@ -62,4 +69,9 @@ struct Reply(MessageType T : MessageType.FIND_DECLARATION)
 {
     enum type = T;
     Symbol symbol;
+}
+
+struct Reply(MessageType T : MessageType.ADD_IMPORT_PATHS)
+{
+    enum type = T;
 }

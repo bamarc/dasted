@@ -5,6 +5,14 @@ import std.conv;
 import message_struct;
 import autocomplete;
 import messages;
+import modulecache;
+
+
+void addImportPaths(const string[] paths)
+{
+    string[] p = paths.dup;
+    ModuleCache.addImportPaths(p);
+}
 
 
 AutocompleteRequest toDcdRequest(const ref Request!(MessageType.COMPLETE) req)
