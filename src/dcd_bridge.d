@@ -57,6 +57,7 @@ Reply!T fromDcdResponse(MessageType T : MessageType.COMPLETE)(const ref Autocomp
         }
         res.symbols ~= s;
     }
+    res.calltips = resp.completionType == CompletionType.calltips;
     return res;
 }
 

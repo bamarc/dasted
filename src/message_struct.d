@@ -2,6 +2,8 @@ module message_struct;
 
 import messages;
 
+enum ubyte PROTOCOL_VERSION = 1;
+
 struct Location
 {
     string filename;
@@ -13,8 +15,8 @@ alias CompletionKind SymbolType;
 struct Symbol
 {
     ubyte type;
-    string name;
     Location location;
+    string name;
     string[] qualifiers;
     string[] parameters;
     string[] templateParameters;
@@ -70,6 +72,7 @@ struct Reply(MessageType T)
 struct Reply(MessageType T : MessageType.COMPLETE)
 {
     enum type = T;
+    bool calltips;
     Symbol[] symbols;
 }
 
@@ -82,6 +85,7 @@ struct Reply(MessageType T : MessageType.FIND_DECLARATION)
 struct Reply(MessageType T : MessageType.ADD_IMPORT_PATHS)
 {
     enum type = T;
+    ubyte payload;
 }
 
 struct Reply(MessageType T : MessageType.GET_DOC)

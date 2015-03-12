@@ -25,7 +25,6 @@ class DastedException : Exception
 
 class Dasted
 {
-
     this()
     {
         socket = new TcpSocket(AddressFamily.INET);
@@ -81,7 +80,7 @@ private:
     void onMessage(const Request!(MessageType.FIND_DECLARATION) req)
     {
         auto dcdReq = toDcdRequest(req);
-        auto resp = complete(dcdReq);
+        auto resp = findDeclaration(dcdReq);
         auto rep = fromDcdResponse!(MessageType.FIND_DECLARATION)(resp);
         sendReply(rep);
     }
@@ -124,13 +123,11 @@ private:
     void process(Socket s)
     {
         receive(s);
-        auto pkg = unpack(inbuffer[uint.sizeof..$]);
-        enforce(pkg.length == 2, "Unpacked length " ~ to!string(pkg.length));
-        enforce(pkg.type == pkg.type.array, "Unpacked type " ~ to!string(pkg.type.array));
-        auto valArr = pkg.via.array;
-        enforce(valArr.length == 2, "Unpacked value length " ~ to!string(valArr.length));
-        MessageType type = valArr[0].as!MessageType();
-        auto msg = valArr[1];
+        enforce(inbuffer.length > uint.sizeof + ubyte.sizeof + ubyte.sizeof, "message is too small");
+        ubyte vers = to!ubyte(inbuffer[uint.sizeof]);
+        enforce(vers == PROTOCOL_VERSION, "unsupported protocol version " ~ to!string(vers));
+        MessageType type = to!MessageType(inbuffer[uint.sizeof + vers.sizeof]);
+        auto msg = unpack(inbuffer[(uint.sizeof + type.sizeof + ubyte.sizeof)..$]);
         final switch (type)
         {
             mixin(GenerateTypeSwitch!(MessageType));
@@ -141,6 +138,7 @@ private:
     void sendReply(T)(const ref T rep)
     {
         outbuffer = msgpack.pack(rep);
+        header = [PROTOCOL_VERSION, rep.type];
     }
 
     void receive(Socket s)
@@ -165,12 +163,14 @@ private:
     void send(Socket s)
     {
         enforce(outbuffer.length, "outbuffer is empty");
-        uint length = cast(uint)outbuffer.length;
+        uint length = cast(uint)(outbuffer.length + header.sizeof);
         s.send((cast(ubyte*) &length)[0..length.sizeof]);
+        s.send(header);
         s.send(outbuffer);
     }
 
     TcpSocket socket;
+    ubyte[2] header;
     ubyte[] inbuffer;
     ubyte[] outbuffer;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
