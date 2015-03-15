@@ -23,6 +23,13 @@ struct Symbol
     string doc;
 }
 
+struct Scope
+{
+    Symbol name;
+    Symbol[] inscope;
+    Scope[] children;
+}
+
 enum MessageType : ubyte
 {
     WRONG_TYPE = 0,
@@ -30,6 +37,7 @@ enum MessageType : ubyte
     FIND_DECLARATION,
     ADD_IMPORT_PATHS,
     GET_DOC,
+    OUTLINE,
 }
 
 struct Request(MessageType T)
@@ -64,6 +72,14 @@ struct Request(MessageType T : MessageType.GET_DOC)
     uint cursor;
 }
 
+struct Request(MessageType T : MessageType.OUTLINE)
+{
+    enum type = T;
+    string src;
+}
+
+// Replies
+
 struct Reply(MessageType T)
 {
     enum type = MessageType.WRONG_TYPE;
@@ -92,4 +108,10 @@ struct Reply(MessageType T : MessageType.GET_DOC)
 {
     enum type = T;
     Symbol[] symbols;
+}
+
+struct Reply(MessageType T : MessageType.OUTLINE)
+{
+    enum type = T;
+    Scope global;
 }
