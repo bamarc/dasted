@@ -18,11 +18,19 @@ alias message_struct.Symbol Symbol;
 
 public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUTLINE) request)
 {
+
+    static string dcopy(string s)
+    {
+        import std.conv;
+        char[] tmp = to!(char[])(s);
+        return to!string(tmp);
+    }
+
     class Outliner : ASTVisitor
     {
         alias CompletionKind CK;
 
-        class OutlineScope
+        static class OutlineScope
         {
             Symbol[] symbols;
             OutlineScope[] children;
@@ -31,6 +39,10 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         this()
         {
+            global = new OutlineScope;
+            global.name = ".";
+            current = global;
+            scopeStack ~= current;
         }
 
         override void visit(const ClassDeclaration classDec)
@@ -182,13 +194,13 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
             return global;
         }
 
-        private:
+    private:
 
         void appendSymbol(string fullname, CompletionKind kind, size_t location)
         {
             Symbol symbol;
             //symbol.outScope = scopeStack.length == 0 ? "." : scopeStack.join(".");
-            symbol.name = fullname;
+            symbol.name = dcopy(fullname);
             symbol.type = kind;
             symbol.location.cursor = cast(uint)location;
             current.symbols ~= symbol;
@@ -196,7 +208,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         void indent(const string name)
         {
-            OutlineScope sc;
+            OutlineScope sc = new OutlineScope;
             sc.name = name;
             current.children ~= sc;
             current = sc;
@@ -230,7 +242,18 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
     Reply!(MessageType.OUTLINE) reply;
 
-    // TODO Outline scope -> reply
+    static void mergeScopes(ref Scope s, Outliner.OutlineScope os)
+    {
+        s.name.name = dcopy(os.name);
+        s.symbols = os.symbols.dup;
+        foreach (cos; os.children)
+        {
+            s.children ~= Scope();
+            mergeScopes(s.children.back(), cos);
+        }
+    }
+
+    mergeScopes(reply.global, outliner.global);
 
     return reply;
 }

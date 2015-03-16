@@ -1,6 +1,8 @@
 module dasted;
+
 import message_struct;
 import dcd_bridge;
+import outline;
 
 import std.exception;
 import std.socket;
@@ -64,47 +66,54 @@ class Dasted
 
 private:
 
-    void onMessage(T)(const T req)
+    void processRequest(T)(const T req)
+    {
+        auto rep = onMessage(req);
+        sendReply(rep);
+    }
+
+    Reply!(MessageType.WRONG_TYPE) onMessage(T)(const T req)
     {
         throw new DastedException("unsupported request type (not implemented yet)");
     }
 
-    void onMessage(const Request!(MessageType.COMPLETE) req)
+    Reply!(MessageType.COMPLETE) onMessage(const Request!(MessageType.COMPLETE) req)
     {
         auto dcdReq = toDcdRequest(req);
         auto resp = complete(dcdReq);
-        auto rep = fromDcdResponse!(MessageType.COMPLETE)(resp);
-        sendReply(rep);
+        return fromDcdResponse!(MessageType.COMPLETE)(resp);
     }
 
-    void onMessage(const Request!(MessageType.FIND_DECLARATION) req)
+    Reply!(MessageType.FIND_DECLARATION) onMessage(const Request!(MessageType.FIND_DECLARATION) req)
     {
         auto dcdReq = toDcdRequest(req);
         auto resp = findDeclaration(dcdReq);
-        auto rep = fromDcdResponse!(MessageType.FIND_DECLARATION)(resp);
-        sendReply(rep);
+        return fromDcdResponse!(MessageType.FIND_DECLARATION)(resp);
     }
 
-    void onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
+    Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
     {
         addImportPaths(req.paths);
-        Reply!(MessageType.ADD_IMPORT_PATHS) rep;
-        sendReply(rep);
+        return Reply!(MessageType.ADD_IMPORT_PATHS)();
     }
 
-    void onMessage(const Request!(MessageType.GET_DOC) req)
+    Reply!(MessageType.GET_DOC) onMessage(const Request!(MessageType.GET_DOC) req)
     {
         auto dcdReq = toDcdRequest(req);
         auto resp = getDoc(dcdReq);
-        auto rep = fromDcdResponse!(MessageType.GET_DOC)(resp);
-        sendReply(rep);
+        return fromDcdResponse!(MessageType.GET_DOC)(resp);
+    }
+
+    Reply!(MessageType.OUTLINE) onMessage(const Request!(MessageType.OUTLINE) req)
+    {
+        return getOutline(req);
     }
 
     template GenerateTypeSwitch(T)
     {
         static string gen(string e)
         {
-            return " onMessage(msg.as!(Request!(" ~ T.stringof ~ "." ~ e ~ "))());";
+            return " processRequest(msg.as!(Request!(" ~ T.stringof ~ "." ~ e ~ "))());";
         }
 
         static string gen()

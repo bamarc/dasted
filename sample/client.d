@@ -11,14 +11,18 @@ int main(string[] args)
 {
     enforce(args.length == 3);
     TcpSocket c = new TcpSocket;
-    c.connect(new InternetAddress("localhost", 9168));
-    Request!(MessageType.COMPLETE) req;
+    c.connect(new InternetAddress("localhost", 11344));
+
+    Request!(MessageType.OUTLINE) req;
     req.src = readText(args[1]);
-    req.cursor = to!uint(args[2]);
-    auto bytes = msgpack.pack(MessageType.COMPLETE, req);
+    //req.cursor = to!uint(args[2]);
+    auto bytes = msgpack.pack(req);
     uint[] len = [cast(uint)bytes.length];
+    ubyte[] header = [1, MessageType.OUTLINE];
+    len[0] += cast(uint)(2);
     writeln("Length: ", len);
     c.send(len);
+    c.send(header);
     c.send(bytes);
 
     ubyte[] inbuffer;
@@ -42,9 +46,8 @@ int main(string[] args)
         } while (offset < length);
     }
     receive(c);
-    alias Rep = Reply!(MessageType.COMPLETE);
-    auto rep = msgpack.unpack!Rep(inbuffer[uint.sizeof..$]);
-    auto rep2 = msgpack.unpack!char(inbuffer[uint.sizeof..$]); 
+    alias Rep = Reply!(MessageType.OUTLINE);
+    auto rep = msgpack.unpack!Rep(inbuffer[uint.sizeof + 2 * ubyte.sizeof..$]);
     writeln(rep);
     
     return 0;

@@ -26,7 +26,7 @@ struct Symbol
 struct Scope
 {
     Symbol name;
-    Symbol[] inscope;
+    Symbol[] symbols;
     Scope[] children;
 }
 
