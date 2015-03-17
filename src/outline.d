@@ -47,7 +47,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const ClassDeclaration classDec)
         {
-            appendSymbol(classDec.name.text, CK.className, classDec.name.line);
+            appendSymbol(classDec.name.text, CK.className, classDec.name.index);
             indent(classDec.name.text);
             classDec.accept(this);
             outdent();
@@ -55,7 +55,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const EnumDeclaration enumDec)
         {
-            appendSymbol(enumDec.name.text, CK.enumName, enumDec.name.line);
+            appendSymbol(enumDec.name.text, CK.enumName, enumDec.name.index);
             indent(enumDec.name.text);
             enumDec.accept(this);
             outdent();
@@ -70,15 +70,15 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
                 f.format(enumMem.type);
                 app.put(' ');
                 app.put(enumMem.name.text);
-                appendSymbol(app.data.idup, CK.enumMember, enumMem.name.line);
+                appendSymbol(app.data.idup, CK.enumMember, enumMem.name.index);
             }
             else
-                appendSymbol(enumMem.name.text, CK.enumMember, enumMem.name.line);
+                appendSymbol(enumMem.name.text, CK.enumMember, enumMem.name.index);
         }
 
         override void visit(const EnumMember enumMem)
         {
-            appendSymbol(enumMem.name.text, CK.enumMember, enumMem.name.line);
+            appendSymbol(enumMem.name.text, CK.enumMember, enumMem.name.index);
         }
 
         override void visit(const FunctionDeclaration functionDec)
@@ -94,12 +94,12 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
             app.put(" ");
             app.put(functionDec.name.text);
             f.format(functionDec.parameters);
-            appendSymbol(app.data.idup, CK.functionName, functionDec.name.line);
+            appendSymbol(app.data.idup, CK.functionName, functionDec.name.index);
         }
 
         override void visit(const InterfaceDeclaration interfaceDec)
         {
-            appendSymbol(interfaceDec.name.text, CK.interfaceName, interfaceDec.name.line);
+            appendSymbol(interfaceDec.name.text, CK.interfaceName, interfaceDec.name.index);
             indent(interfaceDec.name.text);
             interfaceDec.accept(this);
             outdent();
@@ -107,7 +107,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const StructDeclaration structDec)
         {
-            appendSymbol(structDec.name.text, CK.structName, structDec.name.line);
+            appendSymbol(structDec.name.text, CK.structName, structDec.name.index);
             indent(structDec.name.text);
             structDec.accept(this);
             outdent();
@@ -115,7 +115,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const TemplateDeclaration templateDeclaration)
         {
-            appendSymbol(templateDeclaration.name.text, CK.templateName, templateDeclaration.name.line);
+            appendSymbol(templateDeclaration.name.text, CK.templateName, templateDeclaration.name.index);
             indent(templateDeclaration.name.text);
             templateDeclaration.accept(this);
             outdent();
@@ -123,51 +123,51 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const StaticConstructor s)
         {
-            static if (__traits(compiles, s.line))
+            static if (__traits(compiles, s.location))
             {
-                appendSymbol("static this()", CK.functionName, s.line);
+                appendSymbol("static this()", CK.functionName, s.location);
             }
         }
 
         override void visit(const StaticDestructor s)
         {
-            static if (__traits(compiles, s.line))
+            static if (__traits(compiles, s.location))
             {
-                appendSymbol("static ~this()", CK.functionName, s.line);
+                appendSymbol("static ~this()", CK.functionName, s.location);
             }
         }
 
         override void visit(const SharedStaticConstructor s)
         {
-            static if (__traits(compiles, s.line))
+            static if (__traits(compiles, s.location))
             {
-                appendSymbol("shared static this()", CK.functionName, s.line);
+                appendSymbol("shared static this()", CK.functionName, s.location);
             }
         }
 
         override void visit(const SharedStaticDestructor s)
         {
-            static if (__traits(compiles, s.line))
+            static if (__traits(compiles, s.location))
             {
-                appendSymbol("shared static ~this()", CK.functionName, s.line);
+                appendSymbol("shared static ~this()", CK.functionName, s.location);
             }
         }
 
         override void visit(const Constructor c)
         {
-            appendSymbol("this()", CK.functionName, c.line);
+            appendSymbol("this()", CK.functionName, c.location);
         }
 
         override void visit(const Destructor c)
         {
-            appendSymbol("~this()", CK.functionName, c.line);
+            appendSymbol("~this()", CK.functionName, c.index);
         }
 
         override void visit(const Unittest u) {}
 
         override void visit(const UnionDeclaration unionDeclaration)
         {
-            appendSymbol(unionDeclaration.name.text, CK.unionName, unionDeclaration.name.line);
+            appendSymbol(unionDeclaration.name.text, CK.unionName, unionDeclaration.name.index);
             indent(unionDeclaration.name.text);
             unionDeclaration.accept(this);
             outdent();
@@ -185,7 +185,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
                 }
                 app.put(' ');
                 app.put(d.name.text);
-                appendSymbol(app.data.idup, CK.variableName, d.name.line);
+                appendSymbol(app.data.idup, CK.variableName, d.name.index);
             }
         }
 
