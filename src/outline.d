@@ -32,31 +32,28 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         static class OutlineScope
         {
-            Symbol[] symbols;
+            Symbol[] subsymbols;
             OutlineScope[] children;
-            string name;
+            Symbol symbol;
         }
 
         this()
         {
             global = new OutlineScope;
-            global.name = ".";
             current = global;
             scopeStack ~= current;
         }
 
         override void visit(const ClassDeclaration classDec)
         {
-            appendSymbol(classDec.name.text, CK.className, classDec.name.index);
-            indent(classDec.name.text);
+            indent(classDec.name.text, CK.className, classDec.name.index);
             classDec.accept(this);
             outdent();
         }
 
         override void visit(const EnumDeclaration enumDec)
         {
-            appendSymbol(enumDec.name.text, CK.enumName, enumDec.name.index);
-            indent(enumDec.name.text);
+            indent(enumDec.name.text, CK.enumName, enumDec.name.index);
             enumDec.accept(this);
             outdent();
         }
@@ -99,24 +96,21 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const InterfaceDeclaration interfaceDec)
         {
-            appendSymbol(interfaceDec.name.text, CK.interfaceName, interfaceDec.name.index);
-            indent(interfaceDec.name.text);
+            indent(interfaceDec.name.text, CK.interfaceName, interfaceDec.name.index);
             interfaceDec.accept(this);
             outdent();
         }
 
         override void visit(const StructDeclaration structDec)
         {
-            appendSymbol(structDec.name.text, CK.structName, structDec.name.index);
-            indent(structDec.name.text);
+            indent(structDec.name.text, CK.structName, structDec.name.index);
             structDec.accept(this);
             outdent();
         }
 
         override void visit(const TemplateDeclaration templateDeclaration)
         {
-            appendSymbol(templateDeclaration.name.text, CK.templateName, templateDeclaration.name.index);
-            indent(templateDeclaration.name.text);
+            indent(templateDeclaration.name.text, CK.templateName, templateDeclaration.name.index);
             templateDeclaration.accept(this);
             outdent();
         }
@@ -167,8 +161,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const UnionDeclaration unionDeclaration)
         {
-            appendSymbol(unionDeclaration.name.text, CK.unionName, unionDeclaration.name.index);
-            indent(unionDeclaration.name.text);
+            indent(unionDeclaration.name.text, CK.unionName, unionDeclaration.name.index);
             unionDeclaration.accept(this);
             outdent();
         }
@@ -196,20 +189,24 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
     private:
 
-        void appendSymbol(string fullname, CompletionKind kind, size_t location)
+        Symbol createSymbol(string fullname, CompletionKind kind, size_t location)
         {
-            Symbol symbol;
-            //symbol.outScope = scopeStack.length == 0 ? "." : scopeStack.join(".");
-            symbol.name = dcopy(fullname);
-            symbol.type = kind;
-            symbol.location.cursor = cast(uint)location;
-            current.symbols ~= symbol;
+            Symbol result;
+            result.name = dcopy(fullname);
+            result.type = kind;
+            result.location.cursor = cast(uint)location;
+            return result;
         }
 
-        void indent(const string name)
+        void appendSymbol(string fullname, CompletionKind kind, size_t location)
+        {
+            current.subsymbols ~= createSymbol(fullname, kind, location);
+        }
+
+        void indent(string fullname, CompletionKind kind, size_t location)
         {
             OutlineScope sc = new OutlineScope;
-            sc.name = name;
+            sc.symbol = createSymbol(fullname, kind, location);
             current.children ~= sc;
             current = sc;
             scopeStack ~= sc;
@@ -244,8 +241,10 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
     static void mergeScopes(ref Scope s, Outliner.OutlineScope os)
     {
-        s.name.name = dcopy(os.name);
-        s.symbols = os.symbols.dup;
+        s.master.name = dcopy(os.symbol.name);
+        s.master.type = os.symbol.type;
+        s.master.location = os.symbol.location;
+        s.symbols = os.subsymbols.dup;
         foreach (cos; os.children)
         {
             s.children ~= Scope();

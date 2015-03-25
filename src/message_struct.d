@@ -2,7 +2,7 @@ module message_struct;
 
 import messages;
 
-enum ubyte PROTOCOL_VERSION = 1;
+enum ubyte PROTOCOL_VERSION = 2;
 
 struct Location
 {
@@ -25,7 +25,7 @@ struct Symbol
 
 struct Scope
 {
-    Symbol name;
+    Symbol master;
     Symbol[] symbols;
     Scope[] children;
 }
@@ -38,6 +38,7 @@ enum MessageType : ubyte
     ADD_IMPORT_PATHS,
     GET_DOC,
     OUTLINE,
+    LOCAL_USAGE,
 }
 
 struct Request(MessageType T)
@@ -78,6 +79,13 @@ struct Request(MessageType T : MessageType.OUTLINE)
     string src;
 }
 
+struct Request(MessageType T : MessageType.LOCAL_USAGE)
+{
+    enum type = T;
+    string src;
+    uint cursor;
+}
+
 // Replies
 
 struct Reply(MessageType T)
@@ -114,4 +122,10 @@ struct Reply(MessageType T : MessageType.OUTLINE)
 {
     enum type = T;
     Scope global;
+}
+
+struct Reply(MessageType T : MessageType.LOCAL_USAGE)
+{
+    enum type = T;
+    Symbol[] symbols;
 }

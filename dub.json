@@ -25,7 +25,7 @@
 		"./thirdparty/DCD/containers/src/containers/internal/storage_type.d",
 		"./thirdparty/DCD/containers/src/containers/slist.d"
 	],
-	"importPaths": ["./thirdparty/DCD/containers/src"],
+        "importPaths": ["./thirdparty/DCD/containers/src", "./thirdparty/DCD/libdparse/src"],
 	"dependencies": {
 		"libdparse": "~master",
 		"msgpack-d": "~master"
