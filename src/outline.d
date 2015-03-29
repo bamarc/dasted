@@ -18,7 +18,6 @@ alias message_struct.Symbol Symbol;
 
 public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUTLINE) request)
 {
-
     static string dcopy(string s)
     {
         import std.conv;
@@ -46,7 +45,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const ClassDeclaration classDec)
         {
-            indent(classDec.name.text, CK.className, classDec.name.index);
+            indent(classDec);
             classDec.accept(this);
             outdent();
         }
@@ -198,15 +197,60 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
             return result;
         }
 
+        string makeString(const TemplateTupleParameter ttp)
+        {
+            return ttp.identifier.text;
+        }
+
+        string makeString(const TemplateTypeParameter ttp)
+        {
+            return ttp.identifier.text;
+        }
+
+        string makeString(const TemplateThisParameter ttp)
+        {
+            return makeString(ttp.templateTypeParameter);
+        }
+
+        string makeString(const TemplateValueParameter tvp)
+        {
+            return tvp.identifier.text;
+        }
+
+        string[] makeString(const TemplateParameters tp)
+        {
+            string[] result;
+            foreach (i; tp.templateParameterList.items)
+            {
+                string str;
+                str ~= makeString(i.templateTupleParameter);
+                str ~= makeString(i.templateThisParameter);
+                str ~= makeString(i.templateTypeParameter);
+                str ~= makeString(i.templateValueParameter);
+                result ~= str;
+            }
+            return result;
+        }
+
+        Symbol createSymbol(const ClassDeclaration classDec)
+        {
+            Symbol result;
+            result.name = dcopy(classDec.name.text);
+            result.type = CK.className;
+            result.location.cursor = cast(uint)(classDec.name.index);
+            result.templateParameters = makeString(classDec.templateParameters);
+            return result;
+        }
+
         void appendSymbol(string fullname, CompletionKind kind, size_t location)
         {
             current.subsymbols ~= createSymbol(fullname, kind, location);
         }
 
-        void indent(string fullname, CompletionKind kind, size_t location)
+        void indent(Args...)(Args args)
         {
             OutlineScope sc = new OutlineScope;
-            sc.symbol = createSymbol(fullname, kind, location);
+            sc.symbol = createSymbol(args);
             current.children ~= sc;
             current = sc;
             scopeStack ~= sc;

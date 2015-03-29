@@ -2,7 +2,7 @@ module message_struct;
 
 import messages;
 
-enum ubyte PROTOCOL_VERSION = 2;
+enum ubyte PROTOCOL_VERSION = 3;
 
 struct Location
 {
@@ -17,6 +17,7 @@ struct Symbol
     ubyte type;
     Location location;
     string name;
+    string typeName;
     string[] qualifiers;
     string[] parameters;
     string[] templateParameters;
@@ -39,6 +40,8 @@ enum MessageType : ubyte
     GET_DOC,
     OUTLINE,
     LOCAL_USAGE,
+    USAGE,
+    CLASS_HIERARCHY,
 }
 
 struct Request(MessageType T)
@@ -86,6 +89,19 @@ struct Request(MessageType T : MessageType.LOCAL_USAGE)
     uint cursor;
 }
 
+struct Request(MessageType T : MessageType.USAGE)
+{
+    enum type = T;
+    string src;
+    uint cursor;
+}
+
+struct Request(MessageType T : MessageType.CLASS_HIERARCHY)
+{
+    enum type = T;
+    string[] filePaths;
+}
+
 // Replies
 
 struct Reply(MessageType T)
@@ -128,4 +144,17 @@ struct Reply(MessageType T : MessageType.LOCAL_USAGE)
 {
     enum type = T;
     Symbol[] symbols;
+}
+
+struct Reply(MessageType T : MessageType.USAGE)
+{
+    enum type = T;
+    Symbol[] symbols;
+}
+
+struct Reply(MessageType T : MessageType.CLASS_HIERARCHY)
+{
+    enum type = T;
+    Symbol[] base;
+    Symbol[] derived;
 }
