@@ -102,7 +102,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const StructDeclaration structDec)
         {
-            indent(structDec.name.text, CK.structName, structDec.name.index);
+            indent(structDec);
             structDec.accept(this);
             outdent();
         }
@@ -199,12 +199,12 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         string makeString(const TemplateTupleParameter ttp)
         {
-            return ttp.identifier.text;
+            return dcopy(ttp.identifier.text);
         }
 
         string makeString(const TemplateTypeParameter ttp)
         {
-            return ttp.identifier.text;
+            return dcopy(ttp.identifier.text);
         }
 
         string makeString(const TemplateThisParameter ttp)
@@ -214,19 +214,37 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         string makeString(const TemplateValueParameter tvp)
         {
-            return tvp.identifier.text;
+            return dcopy(tvp.identifier.text);
         }
 
         string[] makeString(const TemplateParameters tp)
         {
             string[] result;
+            if (tp is null || tp.templateParameterList is null)
+            {
+                return result;
+            }
+
             foreach (i; tp.templateParameterList.items)
             {
                 string str;
-                str ~= makeString(i.templateTupleParameter);
-                str ~= makeString(i.templateThisParameter);
-                str ~= makeString(i.templateTypeParameter);
-                str ~= makeString(i.templateValueParameter);
+                if (i.templateTupleParameter !is null)
+                {
+                    str ~= makeString(i.templateTupleParameter);
+                }
+                else if (i.templateThisParameter !is null)
+                {
+                    str ~= makeString(i.templateThisParameter);
+                }
+                else if (i.templateTypeParameter !is null)
+                {
+                    str ~= makeString(i.templateTypeParameter);
+                }
+                else if (i.templateValueParameter !is null)
+                {
+                    str ~= makeString(i.templateValueParameter);
+                }
+
                 result ~= str;
             }
             return result;
@@ -239,6 +257,16 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
             result.type = CK.className;
             result.location.cursor = cast(uint)(classDec.name.index);
             result.templateParameters = makeString(classDec.templateParameters);
+            return result;
+        }
+
+        Symbol createSymbol(const StructDeclaration structDec)
+        {
+            Symbol result;
+            result.name = structDec.name.text;
+            result.type = CK.structName;
+            result.location.cursor = cast(uint)structDec.name.index;
+            result.templateParameters = makeString(structDec.templateParameters);
             return result;
         }
 
@@ -283,17 +311,32 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
     Reply!(MessageType.OUTLINE) reply;
 
+    static void symCopy(ref Symbol s)
+    {
+        import std.algorithm;
+        s.name = dcopy(s.name);
+        s.templateParameters = array(map!(s => dcopy(s))(s.templateParameters));
+        s.typeName = dcopy(s.typeName);
+        s.qualifiers = array(map!(s => dcopy(s))(s.qualifiers));
+        s.parameters = array(map!(s => dcopy(s))(s.parameters));
+        s.doc = dcopy(s.doc);
+    }
+
     static void mergeScopes(ref Scope s, Outliner.OutlineScope os)
     {
-        s.master.name = dcopy(os.symbol.name);
-        s.master.type = os.symbol.type;
-        s.master.location = os.symbol.location;
+        s.master = os.symbol;
         s.symbols = os.subsymbols.dup;
+        symCopy(s.master);
+        foreach (ss; s.symbols)
+        {
+            symCopy(ss);
+        }
         foreach (cos; os.children)
         {
             s.children ~= Scope();
             mergeScopes(s.children.back(), cos);
         }
+
     }
 
     mergeScopes(reply.global, outliner.global);
