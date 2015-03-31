@@ -36,6 +36,7 @@ class Dasted
 
     void run(ushort port)
     {
+        stdout.writeln("Running...");
         inbuffer.length = 1024;
         scope (exit)
         {
