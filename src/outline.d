@@ -1,6 +1,7 @@
 module outline;
 
 import message_struct;
+import convert;
 
 import std.array;
 import std.typecons;
@@ -252,12 +253,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         Symbol createSymbol(const ClassDeclaration classDec)
         {
-            Symbol result;
-            result.name = dcopy(classDec.name.text);
-            result.type = CK.className;
-            result.location.cursor = cast(uint)(classDec.name.index);
-            result.templateParameters = makeString(classDec.templateParameters);
-            return result;
+            return toSymbol(classDec);
         }
 
         Symbol createSymbol(const StructDeclaration structDec)

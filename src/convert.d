@@ -1,9 +1,16 @@
 module convert;
 
+import message_struct;
+
+import messages;
 import std.d.ast;
 import std.d.lexer;
 import std.d.parser;
 import std.d.formatter;
+
+import std.array;
+
+alias message_struct.Symbol Symbol;
 
 auto toSymbol(T)(const T node)
 {
@@ -15,7 +22,7 @@ auto toSymbol(T)(const T node)
         void fromToken(const Token t)
         {
             result.name = t.text;
-            result.location.cursor = t.index;
+            result.location.cursor = cast(uint)t.index;
         }
 
         override void visit(const AnonymousEnumMember enumMem)
@@ -35,7 +42,10 @@ auto toSymbol(T)(const T node)
         {
             fromToken(classDec.name);
             result.type = CK.className;
-            classDec.accept(this);
+            if (classDec.templateParameters !is null)
+            {
+                visit(classDec.templateParameters);
+            }
         }
 
         override void visit(const EnumDeclaration enumDec)
@@ -95,22 +105,31 @@ auto toSymbol(T)(const T node)
         {
             fromToken(interfaceDec.name);
             result.type = CK.className;
-            interfaceDec.accept(this);
+            if (interfaceDec.templateParameters !is null)
+            {
+                visit(interfaceDec.templateParameters);
+            }
         }
 
         override void visit(const StructDeclaration structDec)
         {
             fromToken(structDec.name);
             result.type = CK.structName;
-            structDec.accept(this);
+            if (structDec.templateParameters !is null)
+            {
+                visit(structDec.templateParameters);
+            }
         }
 
         override void visit(const TemplateDeclaration templateDec)
         {
             fromToken(templateDec.name);
             result.type = CK.templateName;
-            templateDec.accept(this);
-            mixin (visitIfNotNull!(templateParameters, constraint));
+//            templateDec.accept(this);
+            if (templateDec.templateParameters !is null)
+            {
+                visit(templateDec.templateParameters);
+            }
         }
 
         override void visit(const StaticConstructor s)
@@ -157,6 +176,11 @@ auto toSymbol(T)(const T node)
             }
         }
 
+        override void visit(const TemplateParameters templateParameters)
+        {
+
+        }
+
         override void visit(const Constructor c)
         {
             result.name = "this()";
@@ -168,7 +192,7 @@ auto toSymbol(T)(const T node)
         {
             result.name = "~this()";
             result.type = CK.functionName;
-            result.location.cursor = cast(uint)c.location;
+            result.location.cursor = cast(uint)c.index;
         }
 
         override void visit(const Unittest u) {}
@@ -177,20 +201,19 @@ auto toSymbol(T)(const T node)
         {
             fromToken(unionDec.name);
             result.type = CK.unionName;
-            unionDec.accept(this);
         }
 
         override void visit(const VariableDeclaration variableDec)
         {
-            fromToken(variableDec.name);
             result.type = CK.variableName;
             foreach (const Declarator d; variableDec.declarators)
             {
+                fromToken(d.name);
                 auto app = appender!(char[])();
-                if (variableDeclaration.type !is null)
+                if (variableDec.type !is null)
                 {
                     auto f = new Formatter!(typeof(app))(app);
-                    f.format(variableDeclaration.type);
+                    f.format(variableDec.type);
                     result.typeName = app.data.idup;
                 }
             }
@@ -201,8 +224,11 @@ auto toSymbol(T)(const T node)
         Symbol result;
 
         alias visit = ASTVisitor.visit;
+
     }
 
-
-
+    import std.typecons;
+    auto conv = scoped!Converter();
+    conv.visit(node);
+    return conv.result;
 }
