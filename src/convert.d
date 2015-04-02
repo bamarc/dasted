@@ -203,22 +203,6 @@ auto toSymbol(T)(const T node)
             result.type = CK.unionName;
         }
 
-        override void visit(const VariableDeclaration variableDec)
-        {
-            result.type = CK.variableName;
-            foreach (const Declarator d; variableDec.declarators)
-            {
-                fromToken(d.name);
-                auto app = appender!(char[])();
-                if (variableDec.type !is null)
-                {
-                    auto f = new Formatter!(typeof(app))(app);
-                    f.format(variableDec.type);
-                    result.typeName = app.data.idup;
-                }
-            }
-        }
-
     private:
 
         Symbol result;

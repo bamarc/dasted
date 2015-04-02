@@ -53,50 +53,29 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const EnumDeclaration enumDec)
         {
-            indent(enumDec.name.text, CK.enumName, enumDec.name.index);
+            indent(enumDec);
             enumDec.accept(this);
             outdent();
         }
 
         override void visit(const AnonymousEnumMember enumMem)
         {
-            if (enumMem.type !is null)
-            {
-                auto app = appender!(char[])();
-                auto f = new Formatter!(typeof(app))(app);
-                f.format(enumMem.type);
-                app.put(' ');
-                app.put(enumMem.name.text);
-                appendSymbol(app.data.idup, CK.enumMember, enumMem.name.index);
-            }
-            else
-                appendSymbol(enumMem.name.text, CK.enumMember, enumMem.name.index);
+            appendSymbol(enumMem);
         }
 
         override void visit(const EnumMember enumMem)
         {
-            appendSymbol(enumMem.name.text, CK.enumMember, enumMem.name.index);
+            appendSymbol(enumMem);
         }
 
         override void visit(const FunctionDeclaration functionDec)
         {
-            auto app = appender!(char[])();
-            if (functionDec.hasAuto)
-            app.put("auto ");
-            if (functionDec.hasRef)
-            app.put("ref ");
-            auto f = new Formatter!(typeof(app))(app);
-            if (functionDec.returnType !is null)
-            f.format(functionDec.returnType);
-            app.put(" ");
-            app.put(functionDec.name.text);
-            f.format(functionDec.parameters);
-            appendSymbol(app.data.idup, CK.functionName, functionDec.name.index);
+            appendSymbol(functionDec);
         }
 
         override void visit(const InterfaceDeclaration interfaceDec)
         {
-            indent(interfaceDec.name.text, CK.interfaceName, interfaceDec.name.index);
+            indent(interfaceDec);
             interfaceDec.accept(this);
             outdent();
         }
@@ -110,7 +89,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         override void visit(const TemplateDeclaration templateDeclaration)
         {
-            indent(templateDeclaration.name.text, CK.templateName, templateDeclaration.name.index);
+            indent(templateDeclaration);
             templateDeclaration.accept(this);
             outdent();
         }
@@ -119,7 +98,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         {
             static if (__traits(compiles, s.location))
             {
-                appendSymbol("static this()", CK.functionName, s.location);
+                appendSymbol(s);
             }
         }
 
@@ -127,7 +106,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         {
             static if (__traits(compiles, s.location))
             {
-                appendSymbol("static ~this()", CK.functionName, s.location);
+                appendSymbol(s);
             }
         }
 
@@ -135,7 +114,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         {
             static if (__traits(compiles, s.location))
             {
-                appendSymbol("shared static this()", CK.functionName, s.location);
+                appendSymbol(s);
             }
         }
 
@@ -143,25 +122,25 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         {
             static if (__traits(compiles, s.location))
             {
-                appendSymbol("shared static ~this()", CK.functionName, s.location);
+                appendSymbol(s);
             }
         }
 
         override void visit(const Constructor c)
         {
-            appendSymbol("this()", CK.functionName, c.location);
+            appendSymbol(c);
         }
 
         override void visit(const Destructor c)
         {
-            appendSymbol("~this()", CK.functionName, c.index);
+            appendSymbol(c);
         }
 
         override void visit(const Unittest u) {}
 
         override void visit(const UnionDeclaration unionDeclaration)
         {
-            indent(unionDeclaration.name.text, CK.unionName, unionDeclaration.name.index);
+            indent(unionDeclaration);
             unionDeclaration.accept(this);
             outdent();
         }
@@ -170,15 +149,18 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         {
             foreach (const Declarator d; variableDeclaration.declarators)
             {
+                Symbol s;
                 auto app = appender!(char[])();
                 if (variableDeclaration.type !is null)
                 {
                     auto f = new Formatter!(typeof(app))(app);
                     f.format(variableDeclaration.type);
+                    s.typeName = app.data.idup;
                 }
-                app.put(' ');
-                app.put(d.name.text);
-                appendSymbol(app.data.idup, CK.variableName, d.name.index);
+                s.name = d.name.text;
+                s.location.cursor = cast(uint)d.name.index;
+                s.type = CK.variableName;
+                appendSymbol(s);
             }
         }
 
@@ -188,15 +170,6 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         }
 
     private:
-
-        Symbol createSymbol(string fullname, CompletionKind kind, size_t location)
-        {
-            Symbol result;
-            result.name = dcopy(fullname);
-            result.type = kind;
-            result.location.cursor = cast(uint)location;
-            return result;
-        }
 
         string makeString(const TemplateTupleParameter ttp)
         {
@@ -251,24 +224,19 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
             return result;
         }
 
-        Symbol createSymbol(const ClassDeclaration classDec)
+        Symbol createSymbol(T)(const ref T node)
         {
-            return toSymbol(classDec);
+            return toSymbol(node);
         }
 
-        Symbol createSymbol(const StructDeclaration structDec)
+        Symbol createSymbol(ref Symbol s)
         {
-            Symbol result;
-            result.name = structDec.name.text;
-            result.type = CK.structName;
-            result.location.cursor = cast(uint)structDec.name.index;
-            result.templateParameters = makeString(structDec.templateParameters);
-            return result;
+            return s;
         }
 
-        void appendSymbol(string fullname, CompletionKind kind, size_t location)
+        void appendSymbol(Args...)(Args args)
         {
-            current.subsymbols ~= createSymbol(fullname, kind, location);
+            current.subsymbols ~= createSymbol(args);
         }
 
         void indent(Args...)(Args args)
