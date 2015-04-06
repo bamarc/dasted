@@ -42,6 +42,7 @@ enum MessageType : ubyte
     LOCAL_USAGE,
     USAGE,
     CLASS_HIERARCHY,
+    SHUTDOWN,
 }
 
 struct Request(MessageType T)
@@ -102,6 +103,12 @@ struct Request(MessageType T : MessageType.CLASS_HIERARCHY)
     string[] filePaths;
 }
 
+struct Request(MessageType T : MessageType.SHUTDOWN)
+{
+    enum type = T;
+    bool payload;
+}
+
 // Replies
 
 struct Reply(MessageType T)
@@ -157,4 +164,10 @@ struct Reply(MessageType T : MessageType.CLASS_HIERARCHY)
     enum type = T;
     Symbol[] base;
     Symbol[] derived;
+}
+
+struct Reply(MessageType T : MessageType.SHUTDOWN)
+{
+    enum type = T;
+    bool payload;
 }

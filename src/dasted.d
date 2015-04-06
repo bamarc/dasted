@@ -45,7 +45,8 @@ class Dasted
         }
         socket.bind(new InternetAddress("localhost", port));
         socket.listen(0);
-        while (true)
+        isRunning = true;
+        while (isRunning)
         {
             try
             {
@@ -108,6 +109,12 @@ private:
     Reply!(MessageType.OUTLINE) onMessage(const Request!(MessageType.OUTLINE) req)
     {
         return getOutline(req);
+    }
+
+    Reply!(MessageType.SHUTDOWN) onMessage(const Request!(MessageType.SHUTDOWN) req)
+    {
+        isRunning = false;
+        return Reply!(MessageType.SHUTDOWN)();
     }
 
     template GenerateTypeSwitch(T)
@@ -183,5 +190,7 @@ private:
     ubyte[2] header;
     ubyte[] inbuffer;
     ubyte[] outbuffer;
+    bool isRunning = false;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
+
 }
