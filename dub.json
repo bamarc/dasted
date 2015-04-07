@@ -27,6 +27,7 @@
 	],
 	"importPaths": [
 		"./src/",
+		"./thirdparty/DCD/src/",
 		"./thirdparty/DCD/containers/src",
 		"./thirdparty/DCD/libdparse/src"
 	],
