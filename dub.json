@@ -34,5 +34,8 @@
 	"dependencies": {
 		"libdparse": "~master",
 		"msgpack-d": "~master"
-	}
+	},
+	"buildRequirements": [
+		"silenceWarnings"
+	]
 }
