@@ -5,6 +5,7 @@ d:
   - ldc-0.14.0
 
 before_install:
+  - git submodule update --init --recursive
 
 install:
 
