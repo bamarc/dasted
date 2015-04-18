@@ -34,6 +34,8 @@ class DSymbol
     abstract DSymbol[] scopeAccess();
     abstract DSymbol[] templateInstantiation(const Token[] tokens);
     abstract DSymbol[] applyArguments(const Token[] tokens);
+    abstract void addSymbol(DSymbol symbol);
+    abstract void injectSymbol(DSymbol symbol);
     abstract string name();
     abstract string type();
     abstract SymbolType symbolType();
@@ -61,7 +63,65 @@ class ClassSymbol : DSymbol
 
     override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
     override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+
+
+    override void addSymbol(DSymbol symbol)
+    {
+        _children ~= symbol;
+    }
+
+    override void injectSymbol(DSymbol symbol)
+    {
+        _adopted ~= symbol;
+    }
 }
+
+class StructSymbol : ClassSymbol
+{
+    this()
+    {
+        _symbolType = SymbolType.STRUCT;
+    }
+}
+
+class UnionSymbol : ClassSymbol
+{
+    this()
+    {
+        _symbolType = SymbolType.UNION;
+    }
+}
+
+class FuncSymbol : DSymbol
+{
+    this()
+    {
+        super(SymbolType.FUNC);
+    }
+    DSymbol[] _children;
+    DSymbol[] _adopted;
+
+    override DSymbol[] dotAccess() { return []; }
+
+    override DSymbol[] scopeAccess()
+    {
+        return _children ~ join(map!(a => a.dotAccess())(_adopted));
+    }
+
+    override void addSymbol(DSymbol symbol)
+    {
+        _children ~= symbol;
+    }
+
+    override void injectSymbol(DSymbol symbol)
+    {
+        _adopted ~= symbol;
+    }
+
+    override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
+    override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+}
+
 
 class VarSymbol : DSymbol
 {
