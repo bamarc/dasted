@@ -122,6 +122,22 @@ class FuncSymbol : DSymbol
     override DSymbol[] applyArguments(const Token[] tokens) { return []; }
 }
 
+class ModuleSymbol : ClassSymbol
+{
+    this()
+    {
+        _symbolType = SymbolType.MODULE;
+    }
+}
+
+class PackageSymbol : ClassSymbol
+{
+    this()
+    {
+        _symbolType = SymbolType.PACKAGE;
+    }
+}
+
 
 class VarSymbol : DSymbol
 {
@@ -144,6 +160,5 @@ class VarSymbol : DSymbol
 
     override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
     override DSymbol[] applyArguments(const Token[] tokens) { return []; }
-
 }
 
