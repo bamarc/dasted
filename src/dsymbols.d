@@ -22,6 +22,16 @@ enum SymbolType
     VAR,
 }
 
+struct ScopeBlock
+{
+    uint begin = uint.max;
+    uint end = uint.max;
+    bool isValid()
+    {
+        return begin != this.init.begin && end != this.init.end;
+    }
+}
+
 class DSymbol
 {
     protected SymbolType _symbolType = SymbolType.NO_TYPE;
@@ -36,9 +46,16 @@ class DSymbol
     abstract DSymbol[] applyArguments(const Token[] tokens);
     abstract void addSymbol(DSymbol symbol);
     abstract void injectSymbol(DSymbol symbol);
-    abstract string name();
-    abstract string type();
-    abstract SymbolType symbolType();
+    abstract string name() const;
+    abstract string type() const;
+    SymbolType symbolType() const
+    {
+        return _symbolType;
+    }
+    ScopeBlock inScope() const
+    {
+        return ScopeBlock();
+    }
 }
 
 class ClassSymbol : DSymbol
@@ -138,6 +155,39 @@ class PackageSymbol : ClassSymbol
     }
 }
 
+class EnumSymbol : DSymbol
+{
+    this()
+    {
+        _symbolType = SymbolType.ENUM;
+    }
+
+    DSymbol[] _children;
+
+    override DSymbol[] dotAccess()
+    {
+        return _children;
+    }
+
+    override DSymbol[] scopeAccess()
+    {
+        return [];
+    }
+
+    override void addSymbol(DSymbol symbol)
+    {
+        _children ~= symbol;
+    }
+
+    override void injectSymbol(DSymbol symbol)
+    {
+        return;
+    }
+
+    override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
+    override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+}
+
 
 class VarSymbol : DSymbol
 {
@@ -160,5 +210,13 @@ class VarSymbol : DSymbol
 
     override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
     override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+}
+
+class EnumVarSymbol : VarSymbol
+{
+    this()
+    {
+        _symbolType = SymbolType.ENUM_VAR;
+    }
 }
 
