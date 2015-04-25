@@ -1,11 +1,13 @@
 module dsymbols;
 
 import std.d.lexer;
+import std.d.ast;
 
 import string_interning;
 
 import std.algorithm;
 import std.array;
+import std.typecons;
 
 enum SymbolType
 {
@@ -28,8 +30,15 @@ struct ScopeBlock
     uint end = uint.max;
     bool isValid()
     {
-        return begin != this.init.begin && end != this.init.end;
+        return begin != this.init.begin || end != this.init.end;
     }
+}
+
+bool isInScope(DSymbol sc, DSymbol sym)
+{
+    auto scb = sc.scopeBlock();
+    auto pos = sym.offset();
+    return scb.isValid() && scb.begin < pos && scb.end > pos;
 }
 
 class DSymbol
@@ -52,9 +61,24 @@ class DSymbol
     {
         return _symbolType;
     }
-    ScopeBlock inScope() const
+    abstract ubyte offset() const;
+    ScopeBlock scopeBlock() const
     {
         return ScopeBlock();
+    }
+
+    private bool _fetched = false;
+
+    protected abstract void doFetch();
+
+    protected final void fetch()
+    {
+        if (_fetched)
+        {
+            return;
+        }
+        _fetched = true;
+        doFetch();
     }
 }
 
@@ -70,11 +94,13 @@ class ClassSymbol : DSymbol
 
     override DSymbol[] dotAccess()
     {
+        fetch();
         return _children;
     }
 
     override DSymbol[] scopeAccess()
     {
+        fetch();
         return _children ~ join(map!(a => a.dotAccess())(_adopted));
     }
 
@@ -122,6 +148,7 @@ class FuncSymbol : DSymbol
 
     override DSymbol[] scopeAccess()
     {
+        fetch();
         return _children ~ join(map!(a => a.dotAccess())(_adopted));
     }
 
@@ -145,6 +172,28 @@ class ModuleSymbol : ClassSymbol
     {
         _symbolType = SymbolType.MODULE;
     }
+
+    void setModule(Module m)
+    {
+        _module = m;
+    }
+
+    override ScopeBlock scopeBlock() const
+    {
+        return ScopeBlock(0, ScopeBlock.end.max);
+    }
+
+    protected override void doFetch()
+    {
+        class ModuleFetcher : ASTVisitor
+        {
+
+        }
+        auto mf = scoped!ModuleFetcher();
+        mf.visit(_module);
+    }
+
+    private Module _module;
 }
 
 class PackageSymbol : ClassSymbol
@@ -166,6 +215,7 @@ class EnumSymbol : DSymbol
 
     override DSymbol[] dotAccess()
     {
+        fetch();
         return _children;
     }
 
@@ -200,6 +250,7 @@ class VarSymbol : DSymbol
 
     override DSymbol[] dotAccess()
     {
+        fetch();
         return _type.dotAccess();
     }
 
