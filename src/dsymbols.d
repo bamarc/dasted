@@ -84,8 +84,9 @@ class DSymbol
 
 class ClassSymbol : DSymbol
 {
-    this()
+    this(const ClassDeclaration decl)
     {
+        _decl = decl;
         super(SymbolType.CLASS);
     }
 
@@ -117,12 +118,36 @@ class ClassSymbol : DSymbol
     {
         _adopted ~= symbol;
     }
+
+    override string name() const
+    {
+        return _decl.name.text;
+    }
+    override string type() const
+    {
+        return "";
+    }
+
+    override ubyte offset() const
+    {
+        return 0;
+    }
+
+    override void doFetch()
+    {
+
+    }
+
+
+
+    private const ClassDeclaration _decl;
 }
 
 class StructSymbol : ClassSymbol
 {
     this()
     {
+        super(null);
         _symbolType = SymbolType.STRUCT;
     }
 }
@@ -131,6 +156,7 @@ class UnionSymbol : ClassSymbol
 {
     this()
     {
+        super(null);
         _symbolType = SymbolType.UNION;
     }
 }
@@ -170,6 +196,7 @@ class ModuleSymbol : ClassSymbol
 {
     this()
     {
+        super(null);
         _symbolType = SymbolType.MODULE;
     }
 
@@ -183,12 +210,88 @@ class ModuleSymbol : ClassSymbol
         return ScopeBlock(0, ScopeBlock.end.max);
     }
 
-    protected override void doFetch()
+    private class ModuleFetcher : ASTVisitor
     {
-        class ModuleFetcher : ASTVisitor
+
+        this()
         {
 
         }
+
+        override void visit(const ClassDeclaration classDec)
+        {
+            addSymbol(new ClassSymbol(classDec));
+        }
+
+        override void visit(const EnumDeclaration enumDec)
+        {
+        }
+
+        override void visit(const AnonymousEnumMember enumMem)
+        {
+        }
+
+        override void visit(const EnumMember enumMem)
+        {
+        }
+
+        override void visit(const FunctionDeclaration functionDec)
+        {
+        }
+
+        override void visit(const InterfaceDeclaration interfaceDec)
+        {
+        }
+
+        override void visit(const StructDeclaration structDec)
+        {
+        }
+
+        override void visit(const TemplateDeclaration templateDeclaration)
+        {
+        }
+
+        override void visit(const StaticConstructor s)
+        {
+        }
+
+        override void visit(const StaticDestructor s)
+        {
+        }
+
+        override void visit(const SharedStaticConstructor s)
+        {
+        }
+
+        override void visit(const SharedStaticDestructor s)
+        {
+        }
+
+        override void visit(const Constructor c)
+        {
+        }
+
+        override void visit(const Destructor c)
+        {
+        }
+
+        override void visit(const Unittest u) {}
+
+        override void visit(const UnionDeclaration unionDeclaration)
+        {
+        }
+
+        override void visit(const VariableDeclaration variableDeclaration)
+        {
+        }
+
+    private:
+
+        alias visit = ASTVisitor.visit;
+    }
+
+    protected override void doFetch()
+    {
         auto mf = scoped!ModuleFetcher();
         mf.visit(_module);
     }
@@ -200,6 +303,7 @@ class PackageSymbol : ClassSymbol
 {
     this()
     {
+        super(null);
         _symbolType = SymbolType.PACKAGE;
     }
 }
