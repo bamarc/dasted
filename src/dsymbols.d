@@ -225,6 +225,7 @@ class ModuleSymbol : ClassSymbol
 
         override void visit(const EnumDeclaration enumDec)
         {
+            addSymbol(new EnumSymbol(enumDec));
         }
 
         override void visit(const AnonymousEnumMember enumMem)
@@ -310,9 +311,10 @@ class PackageSymbol : ClassSymbol
 
 class EnumSymbol : DSymbol
 {
-    this()
+    this(const EnumDeclaration decl)
     {
         _symbolType = SymbolType.ENUM;
+        _decl = decl;
     }
 
     DSymbol[] _children;
@@ -340,6 +342,27 @@ class EnumSymbol : DSymbol
 
     override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
     override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+
+    override string name() const
+    {
+        return _decl.name.text;
+    }
+    override string type() const
+    {
+        return "";
+    }
+
+    override ubyte offset() const
+    {
+        return 0;
+    }
+
+    override void doFetch()
+    {
+
+    }
+
+    private const EnumDeclaration _decl;
 }
 
 
