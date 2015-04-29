@@ -230,10 +230,12 @@ class ModuleSymbol : ClassSymbol
 
         override void visit(const AnonymousEnumMember enumMem)
         {
+            //addSymbol(new EnumVarSymbol(enumMem));
         }
 
         override void visit(const EnumMember enumMem)
         {
+            addSymbol(new EnumVarSymbol(enumMem));
         }
 
         override void visit(const FunctionDeclaration functionDec)
@@ -375,6 +377,16 @@ class VarSymbol : DSymbol
 
     DSymbol _type;
 
+    override void addSymbol(DSymbol symbol)
+    {
+        return;
+    }
+
+    override void injectSymbol(DSymbol symbol)
+    {
+        return;
+    }
+
     override DSymbol[] dotAccess()
     {
         fetch();
@@ -392,9 +404,32 @@ class VarSymbol : DSymbol
 
 class EnumVarSymbol : VarSymbol
 {
-    this()
+    this(const EnumMember mem)
     {
+        _mem = mem;
         _symbolType = SymbolType.ENUM_VAR;
     }
+
+    override string name() const
+    {
+        return _mem.name.text;
+    }
+    override string type() const
+    {
+        return "";
+    }
+
+    override ubyte offset() const
+    {
+        return 0;
+    }
+
+    override void doFetch()
+    {
+
+    }
+
+
+    const EnumMember _mem;
 }
 
