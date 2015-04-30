@@ -163,8 +163,9 @@ class UnionSymbol : ClassSymbol
 
 class FuncSymbol : DSymbol
 {
-    this()
+    this(const FunctionDeclaration decl)
     {
+        _decl = decl;
         super(SymbolType.FUNC);
     }
     DSymbol[] _children;
@@ -190,6 +191,27 @@ class FuncSymbol : DSymbol
 
     override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
     override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+
+    override string name() const
+    {
+        return _decl.name.text;
+    }
+    override string type() const
+    {
+        return "";
+    }
+
+    override ubyte offset() const
+    {
+        return 0;
+    }
+
+    override void doFetch()
+    {
+
+    }
+
+    const FunctionDeclaration _decl;
 }
 
 class ModuleSymbol : ClassSymbol
@@ -240,6 +262,7 @@ class ModuleSymbol : ClassSymbol
 
         override void visit(const FunctionDeclaration functionDec)
         {
+            addSymbol(new FuncSymbol(functionDec));
         }
 
         override void visit(const InterfaceDeclaration interfaceDec)
