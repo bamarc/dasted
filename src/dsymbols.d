@@ -203,13 +203,63 @@ class InterfaceSymbol : DSymbol
     private const InterfaceDeclaration _decl;
 }
 
-class StructSymbol : ClassSymbol
+class StructSymbol : DSymbol
 {
-    this()
+    this(const StructDeclaration decl)
     {
-        super(null);
+        _decl = decl;
         _symbolType = SymbolType.STRUCT;
     }
+
+    DSymbol[] _children;
+    DSymbol[] _adopted;
+
+    override DSymbol[] dotAccess()
+    {
+        fetch();
+        return _children;
+    }
+
+    override DSymbol[] scopeAccess()
+    {
+        fetch();
+        return _children ~ join(map!(a => a.dotAccess())(_adopted));
+    }
+
+    override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
+    override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+
+
+    override void addSymbol(DSymbol symbol)
+    {
+        _children ~= symbol;
+    }
+
+    override void injectSymbol(DSymbol symbol)
+    {
+        _adopted ~= symbol;
+    }
+
+    override string name() const
+    {
+        return _decl.name.text;
+    }
+    override string type() const
+    {
+        return "";
+    }
+
+    override ubyte offset() const
+    {
+        return 0;
+    }
+
+    override void doFetch()
+    {
+
+    }
+
+    private const StructDeclaration _decl;
 }
 
 class UnionSymbol : ClassSymbol
@@ -332,6 +382,7 @@ class ModuleSymbol : ClassSymbol
 
         override void visit(const StructDeclaration structDec)
         {
+            addSymbol(new StructSymbol(structDec));
         }
 
         override void visit(const TemplateDeclaration templateDeclaration)
