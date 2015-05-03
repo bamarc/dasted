@@ -262,13 +262,63 @@ class StructSymbol : DSymbol
     private const StructDeclaration _decl;
 }
 
-class UnionSymbol : ClassSymbol
+class UnionSymbol : DSymbol
 {
-    this()
+    this(const UnionDeclaration decl)
     {
-        super(null);
-        _symbolType = SymbolType.UNION;
+        _decl = decl;
+        _symbolType = SymbolType.STRUCT;
     }
+
+    DSymbol[] _children;
+    DSymbol[] _adopted;
+
+    override DSymbol[] dotAccess()
+    {
+        fetch();
+        return _children;
+    }
+
+    override DSymbol[] scopeAccess()
+    {
+        fetch();
+        return _children ~ join(map!(a => a.dotAccess())(_adopted));
+    }
+
+    override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
+    override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+
+
+    override void addSymbol(DSymbol symbol)
+    {
+        _children ~= symbol;
+    }
+
+    override void injectSymbol(DSymbol symbol)
+    {
+        _adopted ~= symbol;
+    }
+
+    override string name() const
+    {
+        return _decl.name.text;
+    }
+    override string type() const
+    {
+        return "";
+    }
+
+    override ubyte offset() const
+    {
+        return 0;
+    }
+
+    override void doFetch()
+    {
+
+    }
+
+    private const UnionDeclaration _decl;
 }
 
 class FuncSymbol : DSymbol
@@ -465,18 +515,11 @@ class ModuleSymbol : ClassSymbol
         {
         }
 
-        override void visit(const Constructor c)
-        {
-        }
-
-        override void visit(const Destructor c)
-        {
-        }
-
         override void visit(const Unittest u) {}
 
         override void visit(const UnionDeclaration unionDeclaration)
         {
+            addSymbol(new UnionSymbol(unionDeclaration));
         }
 
         override void visit(const VariableDeclaration variableDeclaration)
