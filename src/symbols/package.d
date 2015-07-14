@@ -1,0 +1,13 @@
+module dsymbols;
+
+public import dsymbols.common;
+public import dsymbols.dclass;
+public import dsymbols.denum;
+public import dsymbols.dfunction;
+public import dsymbols.dinterface;
+public import dsymbols.dmodule;
+public import dsymbols.dpackage;
+public import dsymbols.dstruct;
+public import dsymbols.dtemplate;
+public import dsymbols.dunion;
+public import dsymbols.dvariable;
