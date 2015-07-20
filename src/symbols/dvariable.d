@@ -2,65 +2,36 @@ module dsymbols.dvariable;
 
 import dsymbols.common;
 
-class VarSymbol : DASTSymbol!(SymbolType.VAR, VariableDeclaration)
+import std.array;
+import std.algorithm;
+
+DSymbol[] fromNode(const VariableDeclaration decl)
 {
-    this(const VariableDeclaration decl)
-    {
-        super(decl);
-    }
-
-    override void addSymbol(DSymbol symbol)
-    {
-        return;
-    }
-
-    override void injectSymbol(DSymbol symbol)
-    {
-        return;
-    }
-
-    override DSymbol[] dotAccess()
-    {
-        return _children;
-    }
-
-    override DSymbol[] scopeAccess()
-    {
-        return [];
-    }
-
-    override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
-    override DSymbol[] applyArguments(const Token[] tokens) { return []; }
+    return array(map!(a => fromNode(decl, a))(decl.declarators));
 }
 
-class EnumVarSymbol : DASTSymbol!(SymbolType.ENUM, EnumMember)
+DSymbol fromNode(const VariableDeclaration v, const Declarator d)
+{
+    return new VariableSymbol(v, d);
+}
+
+class VariableSymbol : DASTSymbol!(SymbolType.VAR, VariableDeclaration)
+{
+    const Declarator _decl = null;
+    this(const VariableDeclaration v, const Declarator d)
+    {
+        super(v);
+
+        info.name = d.name.text.idup;
+        info.type = toDType(v.type);
+        info.position.offset = cast(Offset)d.name.index;
+    }
+}
+
+class EnumVariableSymbol : DASTSymbol!(SymbolType.ENUM, EnumMember)
 {
     this(const EnumMember mem)
     {
        super(mem);
     }
-
-
-    override void addSymbol(DSymbol symbol)
-    {
-        return;
-    }
-
-    override void injectSymbol(DSymbol symbol)
-    {
-        return;
-    }
-
-    override DSymbol[] dotAccess()
-    {
-        return _children;
-    }
-
-    override DSymbol[] scopeAccess()
-    {
-        return [];
-    }
-
-    override DSymbol[] templateInstantiation(const Token[] tokens) { return []; }
-    override DSymbol[] applyArguments(const Token[] tokens) { return []; }
 }

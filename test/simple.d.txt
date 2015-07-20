@@ -1,5 +1,6 @@
 import std.stdio;
 
+
 string foo()
 {
     return "Hello";
@@ -10,10 +11,19 @@ string foo(string user)
     return "Hello" ~ user;
 }
 
+struct UsersStruct
+{
+    int a;
+    string b;
+    UsersBase u;
+}
+
 
 class UsersBase
 {
-    string[int] users;
+    private string[int] users;
+    protected int var_protected;
+    public int var_public;
 
     void save(int i, string user)
     {
@@ -32,6 +42,18 @@ class UsersBase
         auto ptr = i in users;
         return ptr ? *ptr : defaultUser;
     }
+}
+
+class UsersDerived : UsersBase
+{
+     override string get(int i, string defaultUser) const
+     {
+         return "Derived " ~ super.get(i, defaultUser);
+     }
+
+     static class SubClass
+     {
+     }
 }
 
 static auto base = new UsersBase;

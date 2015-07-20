@@ -1,20 +1,19 @@
 module dmodulecache;
 
 import cache;
+import dsymbols;
+import completionfilter;
+import scopecache;
 
 import memory.allocators;
 import std.allocator;
 import std.d.ast;
 import std.d.lexer;
 import std.d.parser;
-
 import string_interning;
 
 import std.typecons;
 import std.range;
-
-import dsymbols;
-import completionfilter;
 
 debug (print_ast)
 {
@@ -22,6 +21,7 @@ debug (print_ast)
     uint ast_depth = 0;
 }
 
+alias Completer = CompletionCache!SortedFilter;
 
 class ModuleState
 {
@@ -30,7 +30,7 @@ class ModuleState
     private string _filename;
     private SysTime _modTime;
     private ModuleSymbol _module;
-    private CompletionCache!SortedFilter _completions;
+    private Completer _completer;
 
     private void getModule()
     {
@@ -67,7 +67,6 @@ class ModuleState
     {
         override void visit(const T node)
         {
-            alias TypeOfSymbol = NodeToSymbol!T;
             auto sym = fromNode(node);
             debug (print_ast) writeln(repeat(' ', ast_depth++), T.stringof);
             foreach (DSymbol s; sym) action(node, _symbol, s);
@@ -96,6 +95,7 @@ class ModuleState
         mixin VisitNode!(StructDeclaration, child, No.Stop);
         mixin VisitNode!(VariableDeclaration, child, Yes.Stop);
         mixin VisitNode!(FunctionDeclaration, child, Yes.Stop);
+        mixin VisitNode!(UnionDeclaration, child, No.Stop);
 
         private alias visit = ASTVisitor.visit;
     }
@@ -106,7 +106,37 @@ class ModuleState
         _filename = filename;
         _modTime = timeLastModified(filename);
         getModule();
-        _completions = new CompletionCache!SortedFilter;
+        _completer = new Completer;
+    }
+
+    @property inout(Completer) completer() inout
+    {
+        return _completer;
+    }
+
+    @property inout(ModuleSymbol) dmodule() inout
+    {
+        return _module;
+    }
+
+    const(DSymbol)[] findExact(string id)
+    {
+        return findExact(_module, id);
+    }
+
+    const(DSymbol)[] findExact(const(DSymbol) s, string id)
+    {
+        return _completer.fetchExact(s, id);
+    }
+
+    const(DSymbol)[] findPartial(string part)
+    {
+        return findPartial(_module, part);
+    }
+
+    const(DSymbol)[] findPartial(const(DSymbol) s, string part)
+    {
+        return _completer.fetchPartial(_module, part);
     }
 }
 
@@ -129,5 +159,11 @@ unittest
     auto ch = new ModuleCache;
     ch.add("test/simple.d.txt");
     writeln(ch.get("test/simple.d.txt").asString());
+}
+
+class ActiveModule
+{
+    private Completer _completer;
+    private ScopeCache _scopeCache;
 }
 
