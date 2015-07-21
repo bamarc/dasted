@@ -1,5 +1,6 @@
 import std.stdio;
-
+import std.algorithm : equal;
+public import std.range, std.array;
 
 string foo()
 {
@@ -32,6 +33,7 @@ class UsersBase
 
     string get(int i) const
     {
+        import std.exception;
         auto ptr = i in users;
         enforce(ptr, "User not found");
         return *ptr;

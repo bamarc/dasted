@@ -5,7 +5,7 @@ import dsymbols.common;
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const TemplateDeclaration decl)
+DSymbol[] fromNode(const TemplateDeclaration decl, SymbolState state)
 {
     return [new TemplateSymbol(decl)];
 }

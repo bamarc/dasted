@@ -5,7 +5,7 @@ import dsymbols.common;
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const UnionDeclaration decl)
+DSymbol[] fromNode(const UnionDeclaration decl, SymbolState state)
 {
     return [new UnionSymbol(decl)];
 }

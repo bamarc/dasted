@@ -5,7 +5,7 @@ import dsymbols.common;
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const StructDeclaration decl)
+DSymbol[] fromNode(const StructDeclaration decl, SymbolState state)
 {
     return [new StructSymbol(decl)];
 }

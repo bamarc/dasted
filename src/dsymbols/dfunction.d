@@ -5,7 +5,7 @@ import dsymbols.common;
 import std.array;
 import std.algorithm;
 
-DSymbol[] fromNode(const FunctionDeclaration decl)
+DSymbol[] fromNode(const FunctionDeclaration decl, SymbolState state)
 {
     return [new FunctionSymbol(decl)];
 }

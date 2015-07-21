@@ -53,6 +53,11 @@ class ModuleState
         _module = visitor._moduleSymbol;
     }
 
+    static void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)
+    {
+        symbol.addToParent(parent);
+    }
+
     static void child(T, R)(const T node, R parent, R symbol)
     {
         parent.add(symbol);
@@ -63,16 +68,17 @@ class ModuleState
         parent.inject(symbol);
     }
 
-    mixin template VisitNode(T, alias action, Flag!"Stop" stop)
+    mixin template VisitNode(T, Flag!"Stop" stop, alias action = defaultAction)
     {
         override void visit(const T node)
         {
-            auto sym = fromNode(node);
+            auto sym = fromNode(node, _state);
             debug (print_ast) writeln(repeat(' ', ast_depth++), T.stringof);
-            foreach (DSymbol s; sym) action(node, _symbol, s);
+            foreach (DSymbol s; sym) action(node, _state, _symbol, s);
             static if(!stop)
             {
                 auto tmp = _symbol;
+                assert(sym.length == 1);
                 _symbol = sym.front();
                 node.accept(this);
                 _symbol = tmp;
@@ -91,13 +97,22 @@ class ModuleState
 
         private DSymbol _symbol = null;
         private ModuleSymbol _moduleSymbol = null;
-        mixin VisitNode!(ClassDeclaration, child, No.Stop);
-        mixin VisitNode!(StructDeclaration, child, No.Stop);
-        mixin VisitNode!(VariableDeclaration, child, Yes.Stop);
-        mixin VisitNode!(FunctionDeclaration, child, Yes.Stop);
-        mixin VisitNode!(UnionDeclaration, child, No.Stop);
+        mixin VisitNode!(ClassDeclaration, No.Stop);
+        mixin VisitNode!(StructDeclaration, No.Stop);
+        mixin VisitNode!(VariableDeclaration, Yes.Stop);
+        mixin VisitNode!(FunctionDeclaration, Yes.Stop);
+        mixin VisitNode!(UnionDeclaration, No.Stop);
+        mixin VisitNode!(ImportDeclaration, Yes.Stop);
+
+        override void visit(const Declaration decl)
+        {
+            _state.attributes = decl.attributes;
+            decl.accept(this);
+            _state.attributes = null;
+        }
 
         private alias visit = ASTVisitor.visit;
+        private SymbolState _state;
     }
 
 
@@ -157,8 +172,8 @@ unittest
 {
     import std.stdio;
     auto ch = new ModuleCache;
-    ch.add("test/simple.d.txt");
-    writeln(ch.get("test/simple.d.txt").asString());
+    auto st = ch.get("test/simple.d.txt");
+    writeln(st.dmodule.asString());
 }
 
 class ActiveModule

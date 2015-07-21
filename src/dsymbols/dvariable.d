@@ -5,7 +5,7 @@ import dsymbols.common;
 import std.array;
 import std.algorithm;
 
-DSymbol[] fromNode(const VariableDeclaration decl)
+DSymbol[] fromNode(const VariableDeclaration decl, SymbolState state)
 {
     return array(map!(a => fromNode(decl, a))(decl.declarators));
 }

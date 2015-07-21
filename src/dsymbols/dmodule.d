@@ -7,7 +7,7 @@ import std.array;
 import std.algorithm;
 import std.exception;
 
-DSymbol[] fromNode(const Module decl)
+DSymbol[] fromNode(const Module decl, SymbolState state)
 {
     return [new ModuleSymbol(decl)];
 }

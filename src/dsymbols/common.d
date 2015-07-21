@@ -94,6 +94,18 @@ class DSymbol
 
     abstract void rename(string name);
 
+    final void addToParent(DSymbol parent)
+    {
+        if (parent !is null)
+        {
+            addToParentImpl(parent);
+        }
+    }
+    protected void addToParentImpl(DSymbol parent)
+    {
+        parent.add(this);
+    }
+
     abstract string type() const;
     SymbolType symbolType() const
     {
@@ -164,6 +176,11 @@ string tokToString(IdType t)
 {
     import std.d.lexer;
     return str(t);
+}
+
+struct SymbolState
+{
+    const(Attribute)[] attributes;
 }
 
 DType toDType(const(Type) type)

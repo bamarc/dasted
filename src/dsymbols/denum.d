@@ -2,7 +2,7 @@ module dsymbols.denum;
 
 import dsymbols.common;
 
-DSymbol[] fromNode(const EnumDeclaration decl)
+DSymbol[] fromNode(const EnumDeclaration decl, SymbolState state)
 {
     return [new EnumSymbol(decl)];
 }

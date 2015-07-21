@@ -5,7 +5,7 @@ import dsymbols.common;
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const InterfaceDeclaration decl)
+DSymbol[] fromNode(const InterfaceDeclaration decl, SymbolState state)
 {
     return [new InterfaceSymbol(decl)];
 }
