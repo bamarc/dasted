@@ -29,10 +29,9 @@ public:
         mp.insert(Element(scb.end.offset, s));
     }
 
-    DSymbol findScope(DSymbol s)
+    DSymbol findScope(Offset pos)
     {
-        auto scb = s.scopeBlock();
-        auto lb = mp.lowerBound(Element(scb.begin.offset, s));
+        auto lb = mp.lowerBound(Element(pos, null));
         if (lb.empty)
         {
             return null;
