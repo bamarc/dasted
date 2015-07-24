@@ -181,6 +181,7 @@ class ActiveModule
 {
     private Completer _completer;
     private ScopeCache _scopeCache;
+    private ModuleCache _moduleCache;
 
     static class ModuleVisitor : ASTVisitor
     {
@@ -301,6 +302,7 @@ class ActiveModule
         if (symb.symbolType() == SymbolType.VAR)
         {
             //todo
+            //resolve type of var
             return null;
         }
 
@@ -309,8 +311,9 @@ class ActiveModule
 
     const(DSymbol) doFind(const(DSymbol) s, const(Token) identifier)
     {
-        //todo
+        auto symbols = _completer.fetchExact(s, identifier.text);
         return null;
+
     }
 
     const(DSymbol)[] doComplete(const(DSymbol) s, const(Token) part)
