@@ -12,8 +12,17 @@ DSymbol[] fromNode(const InterfaceDeclaration decl, SymbolState state)
 
 class InterfaceSymbol : DASTSymbol!(SymbolType.INTERFACE, InterfaceDeclaration)
 {
+    private ScopeBlock _block;
+
     this(const InterfaceDeclaration decl)
     {
         super(decl);
+        auto bdy = decl.structBody;
+        _block = ScopeBlock(cast(Offset)bdy.startLocation, cast(Offset)bdy.endLocation);
+    }
+
+    override ScopeBlock scopeBlock() const
+    {
+        return _block;
     }
 }

@@ -4,6 +4,7 @@ import cache;
 import dsymbols;
 import completionfilter;
 import scopecache;
+import logger;
 
 import memory.allocators;
 import std.allocator;
@@ -42,7 +43,6 @@ class ModuleState
         import std.file : readText;
         auto src = cast(ubyte[])readText(_filename);
         auto tokenArray = getTokensForParser(src, config, &cache);
-//        auto beforeTokens = assumeSorted(tokenArray).lowerBound(pos);
         auto moduleAst = parseModule(tokenArray, internString("stdin"), allocator, function(a,b,c,d,e){});
         auto visitor = scoped!ModuleVisitor(moduleAst);
         visitor.visit(moduleAst);
@@ -183,11 +183,12 @@ class ActiveModule
     private ScopeCache _scopeCache;
     private ModuleCache _moduleCache;
 
-    static class ModuleVisitor : ASTVisitor
+    class ModuleVisitor : ASTVisitor
     {
-        static void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)
+        void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)
         {
             symbol.addToParent(parent);
+            _scopeCache.add(symbol);
         }
 
         mixin template VisitNode(T, Flag!"Stop" stop, alias action = defaultAction)
@@ -220,7 +221,7 @@ class ActiveModule
         mixin VisitNode!(ClassDeclaration, No.Stop);
         mixin VisitNode!(StructDeclaration, No.Stop);
         mixin VisitNode!(VariableDeclaration, Yes.Stop);
-        mixin VisitNode!(FunctionDeclaration, Yes.Stop);
+        mixin VisitNode!(FunctionDeclaration, No.Stop);
         mixin VisitNode!(UnionDeclaration, No.Stop);
         mixin VisitNode!(ImportDeclaration, Yes.Stop);
 
@@ -245,6 +246,8 @@ class ActiveModule
 
     this()
     {
+        _completer = new Completer;
+        _scopeCache = new ScopeCache;
         _cache = StringCache(StringCache.defaultBucketCount);
         _config.fileName = "";
     }
@@ -255,9 +258,8 @@ class ActiveModule
         _cache = StringCache(StringCache.defaultBucketCount);
         auto src = cast(ubyte[])text;
         _tokenArray = getTokensForParser(src, _config, &_cache);
-//        auto beforeTokens = assumeSorted(tokenArray).lowerBound(pos);
         _module = parseModule(_tokenArray, internString("stdin"), _allocator, function(a,b,c,d,e){});
-        auto visitor = scoped!ModuleVisitor(_module);
+        auto visitor = this.new ModuleVisitor(_module);
         visitor.visit(_module);
         _symbol = visitor._moduleSymbol;
     }
@@ -270,35 +272,45 @@ class ActiveModule
 
     const(DSymbol)[] complete(uint pos)
     {
-        auto sc = getScope(pos);
+        debug(wlog) log(pos);
+        auto sc = rebindable(getScope(pos));
+        debug(wlog) log("scope = ", sc.asString());
         auto beforeTokens = assumeSorted(_tokenArray).lowerBound(pos);
         const(Token)[] chain;
-        while (beforeTokens.back() == tok!"identifier" || beforeTokens.back() == tok!".")
+        while (!beforeTokens.empty() && (beforeTokens.back() == tok!"identifier" || beforeTokens.back() == tok!"."))
         {
             chain ~= beforeTokens.back();
             beforeTokens.popBack();
         }
-        return complete(sc, chain);
+        return complete(sc, chain, pos);
     }
 
-    private const(DSymbol)[] complete(const(DSymbol) sc, const(Token)[] tokens)
+    private const(DSymbol)[] complete(const(DSymbol) sc, const(Token)[] tokens, uint pos)
     {
+        if (tokens.empty())
+        {
+            return null;
+        }
         if (tokens.back() != tok!"identifier")
         {
             return null;
         }
         auto identifier = tokens.back();
+        auto txt = identifier.index + identifier.text.length < pos ? identifier.text : identifier.text[0..pos - identifier.index];
+        debug(wlog) log("tokens back = ", identifier.text);
+        debug(wlog) log("tokens str = ", txt);
         tokens.popBack();
         if (tokens.empty())
         {
-            return doComplete(sc, identifier);
+            return doComplete(sc, txt);
         }
 
         if (tokens.back() != tok!".")
         {
             return null;
         }
-        auto symb = doFind(sc, identifier);
+
+        auto symb = doFind(sc, txt);
         if (symb.symbolType() == SymbolType.VAR)
         {
             //todo
@@ -306,22 +318,79 @@ class ActiveModule
             return null;
         }
 
-        return complete(symb, tokens);
+        return complete(symb, tokens, pos);
     }
 
-    const(DSymbol) doFind(const(DSymbol) s, const(Token) identifier)
+    const(DSymbol) doFind(const(DSymbol) s, string identifier)
     {
-        auto symbols = _completer.fetchExact(s, identifier.text);
+        debug(wlog) log(s.asString(), ": ", identifier);
+        Rebindable!(const(DSymbol)) scp = s;
+        Completer completer = _completer;
+        while (scp !is null)
+        {
+            auto symbols = completer.fetchExact(scp, identifier);
+            if (!symbols.empty())
+            {
+                return symbols.front();
+            }
+            foreach (const(DSymbol) ad; scp.adopted())
+            {
+                if (ad.symbolType() == SymbolType.MODULE)
+                {
+                    auto modState = _moduleCache.get(ad.name());
+                    scp = modState.dmodule();
+                    auto result = modState.findExact(identifier);
+                    if (!result.empty())
+                    {
+                        return result.front();
+                    }
+                }
+            }
+            scp = scp.parent;
+        }
         return null;
-
     }
 
-    const(DSymbol)[] doComplete(const(DSymbol) s, const(Token) part)
+    const(DSymbol)[] doComplete(const(DSymbol) s, string part)
     {
-        //todo
+        debug(wlog) log(s.asString(), ": ", part);
+        Rebindable!(const(DSymbol)) scp = s;
+        Completer completer = _completer;
+        while (scp !is null)
+        {
+            auto symbols = completer.fetchPartial(scp, part);
+            if (!symbols.empty())
+            {
+                debug(wlog) log("native", symbols.length);
+                return symbols;
+            }
+            foreach (const(DSymbol) ad; scp.adopted())
+            {
+                if (ad.symbolType() == SymbolType.MODULE)
+                {
+                    auto modState = _moduleCache.get(ad.name());
+                    scp = modState.dmodule();
+                    auto result = modState.findPartial(part);
+                    if (!result.empty())
+                    {
+                        debug(wlog) log("adopted");
+                        return result;
+                    }
+                }
+            }
+            scp = scp.parent;
+        }
         return null;
     }
+}
 
-//    DSymbol[] complete();
+unittest
+{
+    import std.stdio, std.file, std.algorithm;
+    debug(wlog) log("LOGGG");
+    auto am = new ActiveModule;
+    string src = readText("test/simple.d.txt");
+    am.setSources(src);
+    writeln(map!(a => a.asString())(am.complete(237)));
 }
 

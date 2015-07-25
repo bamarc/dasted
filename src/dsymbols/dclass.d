@@ -12,11 +12,19 @@ DSymbol[] fromNode(const ClassDeclaration decl, SymbolState state)
 
 class ClassSymbol : DASTSymbol!(SymbolType.CLASS, ClassDeclaration)
 {
+    private ScopeBlock _block;
     this(const ClassDeclaration decl)
     {
         super(decl);
 
         info.name = decl.name.text.idup;
         info.position.offset = cast(Offset)decl.name.index;
+        auto bdy = decl.structBody;
+        _block = ScopeBlock(cast(Offset)bdy.startLocation, cast(Offset)bdy.endLocation);
+    }
+
+    override ScopeBlock scopeBlock() const
+    {
+        return _block;
     }
 }

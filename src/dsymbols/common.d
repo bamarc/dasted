@@ -146,7 +146,9 @@ class DSymbol
     }
 
     abstract void add(DSymbol c);
+    abstract inout(DSymbol)[] children() inout;
     abstract void inject(DSymbol a);
+    abstract inout(DSymbol)[] adopted() inout;
 }
 
 struct DType
@@ -360,6 +362,16 @@ class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
     override inout(DSymbol)[] applyArguments(const Token[] tokens) inout
     {
         return [this];
+    }
+
+    override inout(DSymbol)[] children() inout
+    {
+        return _children;
+    }
+
+    override inout(DSymbol)[] adopted() inout
+    {
+        return _adopted;
     }
 
 

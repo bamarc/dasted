@@ -2,6 +2,7 @@ module completionfilter;
 
 import cache;
 import dsymbols.common;
+import logger;
 
 import std.typecons;
 
@@ -11,11 +12,18 @@ class SortedFilter
     import std.container.rbtree;
     alias Second = Rebindable!(const(DSymbol));
     alias Element = Tuple!(string, Rebindable!(const(DSymbol)));
-    private RedBlackTree!(Element, (a, b) => a[0] < b[0]) mp;
+    alias RBTree = RedBlackTree!(Element, (a, b) => a[0] < b[0]);
+    private RBTree mp;
     enum NullSecond = Second();
+
+    this()
+    {
+        mp = new RBTree;
+    }
 
     void add(const(DSymbol) sym)
     {
+        debug(wlog) log(sym.name());
         auto second = rebindable(sym);
         mp.insert(Element(sym.name(), second));
     }
@@ -24,9 +32,11 @@ class SortedFilter
     {
         import std.array, std.algorithm;
         const(DSymbol)[] result = getExact(part);
+        debug(wlog) log(result.length);
         auto upper = mp.upperBound(Element(part, NullSecond));
         while (!upper.empty() && upper.front()[0].startsWith(part))
         {
+            debug(wlog) log(upper.front()[0]);
             result ~= upper.front()[1];
             upper.popFront();
         }
@@ -49,6 +59,7 @@ class CompletionCache(T) : LazyCache!(DSymbol, T)
 
     override T initialize(const(DSymbol) k)
     {
+        debug(wlog) log(k.name());
         auto ret = new T;
         foreach(const(DSymbol) s; k.dotAccess()) ret.add(s);
         return ret;
@@ -56,6 +67,7 @@ class CompletionCache(T) : LazyCache!(DSymbol, T)
 
     auto fetchPartial(const(DSymbol) s, string part)
     {
+        debug(wlog) log(part);
         auto filter = get(s);
         return filter.getPartial(part);
     }
