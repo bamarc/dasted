@@ -6,6 +6,7 @@ import logger;
 
 import std.typecons;
 
+alias Completer = CompletionCache!SortedFilter;
 
 class SortedFilter
 {
@@ -14,7 +15,7 @@ class SortedFilter
     alias Element = Tuple!(string, Rebindable!(const(DSymbol)));
     alias RBTree = RedBlackTree!(Element, (a, b) => a[0] < b[0]);
     private RBTree mp;
-    enum NullSecond = Second();
+    enum NullSecond = Second.init;
 
     this()
     {
