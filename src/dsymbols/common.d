@@ -78,49 +78,61 @@ bool isIn(DSymbol sym, DSymbol scp)
     return scb.isValid() && scb.begin.offset < pos && scb.end.offset > pos;
 }
 
-class DSymbol
+interface ISymbol
+{
+    string name() const;
+    void rename(string name);
+    void addToParent(DSymbol parent);
+    inout(DType) type() inout;
+    SymbolType symbolType() const;
+    Position position() const;
+    ScopeBlock scopeBlock() const;
+
+    @property inout(DSymbol) parent() inout;
+    @property void parent(DSymbol p);
+
+    final bool hasScope() const
+    {
+        return scopeBlock().isValid();
+    }
+}
+
+class DSymbol : ISymbol
 {
     protected SymbolType _symbolType = SymbolType.NO_TYPE;
+
     this(SymbolType t = SymbolType.NO_TYPE)
     {
         _symbolType = t;
     }
 
+    abstract string name() const;
+    abstract void rename(string name);
+    abstract inout(DType) type() inout;
+    abstract Position position() const;
+    abstract ScopeBlock scopeBlock() const;
+
     abstract inout(DSymbol)[] dotAccess() inout;
     abstract inout(DSymbol)[] scopeAccess() inout;
     abstract inout(DSymbol)[] templateInstantiation(const Token[] tokens) inout;
     abstract inout(DSymbol)[] applyArguments(const Token[] tokens) inout;
-    abstract string name() const;
 
-    abstract void rename(string name);
-
-    final void addToParent(DSymbol parent)
+    override void addToParent(DSymbol parent)
     {
         if (parent !is null)
         {
             addToParentImpl(parent);
         }
     }
+
     protected void addToParentImpl(DSymbol parent)
     {
         parent.add(this);
     }
 
-    abstract string type() const;
-    SymbolType symbolType() const
+    override SymbolType symbolType() const
     {
         return _symbolType;
-    }
-    abstract Position position() const;
-
-    bool hasScope() const
-    {
-        return scopeBlock().isValid();
-    }
-
-    ScopeBlock scopeBlock() const
-    {
-        return ScopeBlock();
     }
 
     DSymbol _parent;
@@ -141,7 +153,7 @@ class DSymbol
         {
             import std.range, std.conv, std.array;
             return to!string(repeat(' ', tabs)) ~ to!string(symbolType())
-                ~ ": " ~ name() ~ " -" ~ type() ~ " +" ~ to!string(position().offset);
+                ~ ": " ~ name() ~ " -" ~ type().asString() ~ " +" ~ to!string(position().offset);
         }
     }
 
@@ -154,6 +166,11 @@ class DSymbol
 struct DType
 {
     string[] identifiers;
+
+    string asString() const
+    {
+        return join(identifiers, ".");
+    }
 }
 
 struct SymbolInfo
@@ -166,6 +183,7 @@ struct SymbolInfo
     DSymbol[] templateParameters;
     Position[] usage;
     Position position;
+    ScopeBlock scopeBlock;
 
     this(const Token tok)
     {
@@ -251,14 +269,19 @@ class DSymbolWithInfo : DSymbol
         info.name = name;
     }
 
-    override string type() const
+    override inout(DType) type() inout
     {
-        return join(info.type.identifiers, ".");
+        return info.type;
     }
 
     override Position position() const
     {
         return info.position;
+    }
+
+    override ScopeBlock scopeBlock() const
+    {
+        return info.scopeBlock;
     }
 }
 

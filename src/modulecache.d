@@ -30,7 +30,7 @@ class ModuleState
     private string _filename;
     private SysTime _modTime;
     private ModuleSymbol _module;
-    private Completer _completer;
+    private CompleterCache _completer;
 
     bool isValid() const
     {
@@ -131,7 +131,7 @@ class ModuleState
         _filename = filename;
         _modTime = timeLastModified(filename);
         getModule();
-        _completer = new Completer;
+        _completer = new CompleterCache;
     }
 
     this(string moduleName, string[] importPaths)
@@ -159,7 +159,7 @@ class ModuleState
         this(path);
     }
 
-    @property inout(Completer) completer() inout
+    @property inout(CompleterCache) completer() inout
     {
         return _completer;
     }

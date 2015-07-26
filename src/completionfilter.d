@@ -6,7 +6,8 @@ import logger;
 
 import std.typecons;
 
-alias Completer = CompletionCache!SortedFilter;
+alias Completer = SortedFilter;
+alias CompleterCache = CompletionCache!SortedFilter;
 
 class SortedFilter
 {

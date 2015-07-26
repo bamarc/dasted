@@ -19,7 +19,7 @@ import std.range;
 class ActiveModule
 {
     debug (print_ast) int ast_depth = 0;
-    private Completer _completer;
+    private CompleterCache _completer;
     private ScopeCache _scopeCache;
     private ModuleCache _moduleCache;
 
@@ -91,7 +91,7 @@ class ActiveModule
 
     this()
     {
-        _completer = new Completer;
+        _completer = new CompleterCache;
         _moduleCache = new ModuleCache;
         _scopeCache = new ScopeCache;
         _cache = StringCache(StringCache.defaultBucketCount);
@@ -171,7 +171,7 @@ class ActiveModule
     {
         debug(wlog) log(s.asString(), ": ", identifier);
         Rebindable!(const(DSymbol)) scp = s;
-        Completer completer = _completer;
+        CompleterCache completer = _completer;
         while (scp !is null)
         {
             debug(wlog) log(scp.name(), ": ", scp.symbolType());
@@ -206,7 +206,7 @@ class ActiveModule
     {
         debug(wlog) log(s.asString(), ": ", part);
         Rebindable!(const(DSymbol)) scp = s;
-        Completer completer = _completer;
+        CompleterCache completer = _completer;
         while (scp !is null)
         {
             debug(wlog) log(scp.name(), ": ", scp.symbolType());
