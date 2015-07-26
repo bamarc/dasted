@@ -15,6 +15,7 @@ import string_interning;
 
 import std.typecons;
 import std.range;
+import std.algorithm;
 
 debug (print_ast)
 {
@@ -124,6 +125,11 @@ class ModuleState
 
     this(string filename)
     {
+        debug(wlog) log(filename);
+        if (filename.empty())
+        {
+            return;
+        }
         _filename = filename;
         _modTime = timeLastModified(filename);
         getModule();
@@ -134,8 +140,10 @@ class ModuleState
     {
         import std.path, std.file, std.string, std.array, std.algorithm;
         auto modulePath = split(moduleName, ".");
-        auto paths = map!(a => buildPath(a ~ modulePath) ~ ".d")(importPaths);
-        auto validPaths = filter!(a => isFile(a))(paths);
+        auto paths = array(map!(a => buildPath(a ~ modulePath) ~ ".d")(importPaths)) ~ moduleName;
+        debug(wlog) log("paths = ", paths);
+        auto validPaths = filter!(a => exists(a) && isFile(a))(paths);
+        debug(wlog) log("valid paths = ", validPaths);
         string path;
         if (validPaths.empty())
         {
@@ -150,7 +158,7 @@ class ModuleState
                     ". The first path will be used only");
             }
         }
-        this(validPaths.front());
+        this(path);
     }
 
     @property inout(Completer) completer() inout
@@ -191,9 +199,27 @@ class ModuleCache : LazyCache!(string, ModuleState)
         super(0);
     }
 
+    void addImportPath(string path)
+    {
+        import std.algorithm, std.file;
+        if (canFind(_importPaths, path))
+        {
+            log("Import path already added");
+            return;
+        }
+        if (!isDir(path))
+        {
+            log("Import path does not seem to be dir");
+        }
+        _importPaths = path ~ _importPaths;
+    }
+
+    private string[] _importPaths;
+
     override ModuleState initialize(const(string) s)
     {
-        auto res = new ModuleState(s);
+        log("Initialize module ", s);
+        auto res = new ModuleState(s, _importPaths);
         return res.isValid() ? res : null;
     }
 }
@@ -211,6 +237,11 @@ class ActiveModule
     private Completer _completer;
     private ScopeCache _scopeCache;
     private ModuleCache _moduleCache;
+
+    void addImportPath(string path)
+    {
+        _moduleCache.addImportPath(path);
+    }
 
     class ModuleVisitor : ASTVisitor
     {
@@ -370,11 +401,14 @@ class ActiveModule
                 if (ad.symbolType() == SymbolType.MODULE)
                 {
                     auto modState = _moduleCache.get(ad.name());
-                    scp = modState.dmodule();
-                    auto result = modState.findExact(identifier);
-                    if (!result.empty())
+                    if (modState !is null)
                     {
-                        return result.front();
+                        scp = modState.dmodule();
+                        auto result = modState.findExact(identifier);
+                        if (!result.empty())
+                        {
+                            return result.front();
+                        }
                     }
                 }
             }
@@ -403,12 +437,15 @@ class ActiveModule
                 if (ad.symbolType() == SymbolType.MODULE)
                 {
                     auto modState = _moduleCache.get(ad.name());
-                    scp = modState.dmodule();
-                    auto result = modState.findPartial(part);
-                    if (!result.empty())
+                    if (modState !is null)
                     {
-                        debug(wlog) log("adopted");
-                        return result;
+                        scp = modState.dmodule();
+                        auto result = modState.findPartial(part);
+                        if (!result.empty())
+                        {
+                            debug(wlog) log("adopted");
+                            return result;
+                        }
                     }
                 }
             }
@@ -425,6 +462,7 @@ unittest
     auto am = new ActiveModule;
     string src = readText("test/simple.d.txt");
     am.setSources(src);
+    am.addImportPath("/usr/local/include/d2/");
     assert(map!(a => a.name())(am.complete(234)).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
     writeln(map!(a => a.name())(am.complete(1036)));
 }

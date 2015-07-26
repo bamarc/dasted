@@ -28,10 +28,21 @@ class LazyCache(K, V)
 
         if (p is null || needUpdate(key, *p))
         {
-            val = impl[key] = initialize(key);
+            val = initialize(key);
+            if (val !is null)
+            {
+                impl[key] = val;
+            }
         }
-
-        assert(val !is null);
+        else
+        {
+            val = *p;
+        }
         return val;
+    }
+
+    void set(const(K) key, V value)
+    {
+        impl[key] = value;
     }
 }
