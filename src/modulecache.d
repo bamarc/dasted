@@ -33,6 +33,11 @@ class ModuleState
     private ModuleSymbol _module;
     private Completer _completer;
 
+    bool isValid() const
+    {
+        return _module !is null;
+    }
+
     private void getModule()
     {
         import std.path;
@@ -125,6 +130,29 @@ class ModuleState
         _completer = new Completer;
     }
 
+    this(string moduleName, string[] importPaths)
+    {
+        import std.path, std.file, std.string, std.array, std.algorithm;
+        auto modulePath = split(moduleName, ".");
+        auto paths = map!(a => buildPath(a ~ modulePath) ~ ".d")(importPaths);
+        auto validPaths = filter!(a => isFile(a))(paths);
+        string path;
+        if (validPaths.empty())
+        {
+            log("Module ", moduleName, " not found");
+        }
+        else
+        {
+            path = validPaths.front();
+            if (array(validPaths).length != 1)
+            {
+                log("Module ", moduleName, " destination is ambiguous: ", validPaths,
+                    ". The first path will be used only");
+            }
+        }
+        this(validPaths.front());
+    }
+
     @property inout(Completer) completer() inout
     {
         return _completer;
@@ -165,7 +193,8 @@ class ModuleCache : LazyCache!(string, ModuleState)
 
     override ModuleState initialize(const(string) s)
     {
-        return new ModuleState(s);
+        auto res = new ModuleState(s);
+        return res.isValid() ? res : null;
     }
 }
 
@@ -247,6 +276,7 @@ class ActiveModule
     this()
     {
         _completer = new Completer;
+        _moduleCache = new ModuleCache;
         _scopeCache = new ScopeCache;
         _cache = StringCache(StringCache.defaultBucketCount);
         _config.fileName = "";
@@ -328,6 +358,7 @@ class ActiveModule
         Completer completer = _completer;
         while (scp !is null)
         {
+            debug(wlog) log(scp.name(), ": ", scp.symbolType());
             auto symbols = completer.fetchExact(scp, identifier);
             if (!symbols.empty())
             {
@@ -335,6 +366,7 @@ class ActiveModule
             }
             foreach (const(DSymbol) ad; scp.adopted())
             {
+                debug(wlog) log("adopted ", ad.name(), ": ", ad.symbolType());
                 if (ad.symbolType() == SymbolType.MODULE)
                 {
                     auto modState = _moduleCache.get(ad.name());
@@ -358,6 +390,7 @@ class ActiveModule
         Completer completer = _completer;
         while (scp !is null)
         {
+            debug(wlog) log(scp.name(), ": ", scp.symbolType());
             auto symbols = completer.fetchPartial(scp, part);
             if (!symbols.empty())
             {
@@ -366,6 +399,7 @@ class ActiveModule
             }
             foreach (const(DSymbol) ad; scp.adopted())
             {
+                debug(wlog) log("adopted ", ad.name(), ": ", ad.symbolType());
                 if (ad.symbolType() == SymbolType.MODULE)
                 {
                     auto modState = _moduleCache.get(ad.name());
@@ -391,6 +425,7 @@ unittest
     auto am = new ActiveModule;
     string src = readText("test/simple.d.txt");
     am.setSources(src);
-    writeln(map!(a => a.asString())(am.complete(237)));
+    assert(map!(a => a.name())(am.complete(234)).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
+    writeln(map!(a => a.name())(am.complete(1036)));
 }
 

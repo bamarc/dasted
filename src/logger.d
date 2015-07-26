@@ -10,3 +10,5 @@ else
     public import std.stdio;
     public alias log = writeln;
 }
+
+public import std.conv;

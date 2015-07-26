@@ -16,19 +16,22 @@ class LazyCache(K, V)
     }
 
     abstract V initialize(const(K) key);
+    bool needUpdate(const(K) key, const(V) value)
+    {
+        return false;
+    }
 
     V get(const(K) key)
     {
         auto p = key in impl;
-        auto val = p is null ? initialize(key) : *p;
-        if (val is null)
+        V val;
+
+        if (p is null || needUpdate(key, *p))
         {
-            return null;
+            val = impl[key] = initialize(key);
         }
-        if (p is null)
-        {
-            impl[key] = val;
-        }
+
+        assert(val !is null);
         return val;
     }
 }

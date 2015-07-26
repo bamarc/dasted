@@ -33,13 +33,16 @@ class SortedFilter
         import std.array, std.algorithm;
         const(DSymbol)[] result = getExact(part);
         debug(wlog) log(result.length);
+        assert(filter!(a => a[0].empty() || a[1] is null)(mp[]).empty());
         auto upper = mp.upperBound(Element(part, NullSecond));
+        debug(wlog) log(array(upper).length, ' ', upper.empty());
         while (!upper.empty() && upper.front()[0].startsWith(part))
         {
             debug(wlog) log(upper.front()[0]);
             result ~= upper.front()[1];
             upper.popFront();
         }
+        debug(wlog) log(result.length);
         return result;
     }
 
