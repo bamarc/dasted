@@ -16,12 +16,7 @@ import string_interning;
 import std.typecons;
 import std.range;
 import std.algorithm;
-
-debug (print_ast)
-{
-    import std.stdio;
-    uint ast_depth = 0;
-}
+import std.array;
 
 class ModuleState
 {
@@ -74,6 +69,11 @@ class ModuleState
 
     static class ModuleVisitor : ASTVisitor
     {
+        debug (print_ast)
+        {
+            import std.stdio;
+            uint ast_depth = 0;
+        }
 
         mixin template VisitNode(T, Flag!"Stop" stop, alias action = defaultAction)
         {

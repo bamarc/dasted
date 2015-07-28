@@ -53,6 +53,11 @@ class SortedFilter
         import std.array, std.algorithm;
         return array(map!(a => a[1].get())(mp.equalRange(Element(id, NullSecond))));
     }
+
+    void clear()
+    {
+        mp.clear();
+    }
 }
 
 class CompletionCache(T) : LazyCache!(DSymbol, T)
@@ -81,5 +86,17 @@ class CompletionCache(T) : LazyCache!(DSymbol, T)
     {
         auto filter = get(s);
         return filter.getExact(id);
+    }
+
+    auto fetch(bool exact)(const(DSymbol) s, string str)
+    {
+        static if (exact)
+        {
+            return fetchExact(s, str);
+        }
+        else
+        {
+            return fetchPartial(s, str);
+        }
     }
 }

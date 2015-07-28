@@ -114,8 +114,8 @@ class DSymbol : ISymbol
 
     abstract inout(DSymbol)[] dotAccess() inout;
     abstract inout(DSymbol)[] scopeAccess() inout;
-    abstract inout(DSymbol)[] templateInstantiation(const Token[] tokens) inout;
-    abstract inout(DSymbol)[] applyArguments(const Token[] tokens) inout;
+    abstract bool applyTemplateArguments(const DType[] tokens) inout;
+    abstract bool applyArguments(const DType[] tokens) inout;
 
     override void addToParent(DSymbol parent)
     {
@@ -377,14 +377,14 @@ class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
         return _adopted;
     }
 
-    override inout(DSymbol)[] templateInstantiation(const Token[] tokens) inout
+    override bool applyTemplateArguments(const DType[] tokens) const
     {
-        return [this];
+        return true;
     }
 
-    override inout(DSymbol)[] applyArguments(const Token[] tokens) inout
+    override bool applyArguments(const DType[] tokens) const
     {
-        return [this];
+        return true;
     }
 
     override inout(DSymbol)[] children() inout
