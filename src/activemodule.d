@@ -4,6 +4,7 @@ import dsymbols;
 import dmodulecache;
 import completionfilter;
 import scopecache;
+import engine;
 import logger;
 
 import std.d.ast;
@@ -22,58 +23,9 @@ class ActiveModule
     private CompleterCache _completer;
     private ScopeCache _scopeCache;
     private ModuleCache _moduleCache;
-    private SymbolFinder _engine;
+    private CompletionEngine _engine;
 
-    class SymbolFinder
-    {
-        CompleterCache _cache;
-        const(DSymbol) _scope;
 
-        Offset pos;
-
-        this(const(DSymbol) scp)
-        {
-            _scope = scp;
-            if (scp.symbolType() == SymbolType.MODULE)
-            {
-                auto st = _moduleCache.get(scp.name());
-                if (st is null)
-                {
-                    return;
-                }
-                _cache = st.completer;
-                return;
-            }
-            _cache = _completer;
-        }
-
-        const(DSymbol)[] find(bool exact)(string name)
-        {
-            const(DSymbol)[] res;
-            Rebindable!(const(DSymbol)) scp =_scope;
-            while (scp !is null)
-            {
-                res ~= _cache.fetch!exact(scp, name);
-                foreach (const(DSymbol) s; scp.adopted())
-                {
-                    auto adoptedFinder = scoped!SymbolFinder(s);
-                    res ~= adoptedFinder.find!exact(name);
-                }
-                scp = scp.parent;
-            }
-            return res;
-        }
-
-        const(DSymbol)[] findChild(bool exact)(string name)
-        {
-            return _cache.fetch!exact(scp, name);
-        }
-
-        const(DSymbol)[] find(bool exact)(string[] chain)
-        {
-
-        }
-    }
 
     void addImportPath(string path)
     {
@@ -171,58 +123,6 @@ class ActiveModule
     auto getBeforeTokens(uint pos) const
     {
         return assumeSorted(_tokenArray).lowerBound(pos);
-    }
-
-    const(DSymbol)[] complete(uint pos)
-    {
-        auto scp = rebindable(getScope(pos));
-        assert(scp !is null);
-        auto beforeTokens = getBeforeTokens(pos);
-        if (beforeTokens.empty)
-        {
-            return null;
-        }
-
-        auto curr()
-        {
-            return beforeTokens.back();
-        }
-
-        auto next()
-        {
-            beforeTokens.popBack();
-        }
-
-        auto empty()
-        {
-            return beforeTokens.empty();
-        }
-
-        next();
-        if (curr().type == tok!".")
-        {
-            if (scp.parent !is null)
-            {
-                scp = scp.parent;
-            }
-            next();
-        }
-
-        if (empty())
-        {
-            return null;
-        }
-
-        if (curr().type != tok!"identifier")
-        {
-            // todo
-            // expression evaluation
-            return null;
-        }
-
-        auto symbols = _engine.find!true(curr().text);
-        return symbols;
-
     }
 
     const(DSymbol)[] complete(uint pos)
@@ -348,6 +248,7 @@ class ActiveModule
         return null;
     }
 }
+
 
 unittest
 {
