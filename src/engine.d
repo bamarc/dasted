@@ -16,6 +16,13 @@ class SimpleCompletionEngine
     const(Token)[] _tokens;
     uint _pos;
 
+    void setState(const(DSymbol) scp, const(Token)[] tokens, uint pos)
+    {
+        _scope = scp;
+        _tokens = tokens;
+        _pos = pos;
+    }
+
     @property const(Token) curr() const
     {
         return _tokens.front();
@@ -29,7 +36,7 @@ class SimpleCompletionEngine
 
     bool empty() const
     {
-        return !_tokens.empty();
+        return _tokens.empty();
     }
 
     bool needComplete() const
@@ -49,6 +56,7 @@ class SimpleCompletionEngine
 
     auto invoke(TokenType t, const(DSymbol) sym)
     {
+        trace("SCE: invoke ", t, " ", sym.name());
         auto pt = t in callbacks;
         if (pt is null)
         {
@@ -85,11 +93,17 @@ class SimpleCompletionEngine
 
     const(DSymbol)[] dotCompleteStart(const(DSymbol)[] symbols)
     {
+        trace("SCE: dotCompleteStart");
         return array(joiner(map!(a => invoke(tok!".", a))(symbols)));
     }
 
+    const(DSymbol)[] identifierCompleteStart(const(DSymbol)[] symbols)
+    {
+        auto txt = tokenText();
+        trace("SCE: identifierCompleteStart with ", txt);
+        return array(filter!(a => a.name().startsWith(txt))(symbols));
+    }
 
-    const(DSymbol)[] identifierComplete(const(ModuleSymbol) mod) { return null; }
     const(DSymbol)[] scopeComplete(const(DSymbol) s)
     {
         typeof(return) res;
@@ -100,15 +114,8 @@ class SimpleCompletionEngine
             foreach (const(DSymbol) adop; scp.adopted()) res ~= invoke(tok!".", adop);
             scp = scp.parent;
         }
+        trace("SCE: scopeComplete symbols = ", res.length);
         return res;
-    }
-
-    this(const(DSymbol) scp, ModuleCache modules, const(Token)[] tokens, uint pos)
-    {
-        _scope = scp;
-        _modules = modules;
-        _tokens = tokens;
-        _pos = pos;
     }
 
     template FirstArg(F)
@@ -132,31 +139,36 @@ class SimpleCompletionEngine
         return res;
     }
 
-    this()
+    this(ModuleCache modules)
     {
+        _modules = modules;
         callbacks[tok!"."] = Dispatch!("dotComplete")();
-        callbacks[tok!"identifier"] = Dispatch!("identifierComplete")();
     }
 
     const(DSymbol)[] complete()
     {
+        trace("SCE: complete");
         auto scp = _scope;
         if (curr.type == tok!"." && scp.parent !is null)
         {
             scp = scp.parent;
             next();
         }
-
+        trace("SCE: scope = ", scp.name());
         auto symbols = scopeComplete(scp);
+        trace("SCE: tokens loop ", empty(), " ", symbols.empty());
         while (!empty() && !symbols.empty())
         {
+            trace("SCE: token type ", tokToString(curr.type));
             switch (curr.type)
             {
-            case tok!".": symbols = dotCompleteStart(symbols);
+            case tok!".": symbols = dotCompleteStart(symbols); break;
+            case tok!"identifier": symbols = identifierCompleteStart(symbols); break;
             default: symbols = null;
             }
             next();
         }
+        trace("SCE: result = ", array(map!(a => a.name())(symbols)));
         return symbols;
     }
 }

@@ -27,7 +27,7 @@ class ActiveModule
     private ModuleCache _moduleCache;
     private Engine _engine;
 
-    static bool continueSymbol(const(Token) t)
+    static bool continueToken(const(Token) t)
     {
         return (t.type == tok!"identifier"
             || t.type == tok!".");
@@ -107,6 +107,7 @@ class ActiveModule
         _moduleCache = new ModuleCache;
         _scopeCache = new ScopeCache;
         _cache = StringCache(StringCache.defaultBucketCount);
+        _engine = new Engine(_moduleCache);
         _config.fileName = "";
     }
 
@@ -135,17 +136,18 @@ class ActiveModule
 
     const(DSymbol)[] complete(uint pos)
     {
-        debug(wlog) log(pos);
+        debug(wlog) trace("Complete: command pos = ", pos);
         auto sc = rebindable(getScope(pos));
-        debug(wlog) log("scope = ", sc.asString());
+        debug(wlog) trace("Complete: scope = ", sc.name());
         auto beforeTokens = assumeSorted(_tokenArray).lowerBound(pos);
         const(Token)[] chain;
-        while (!beforeTokens.empty() && (beforeTokens.back() == tok!"identifier" || beforeTokens.back() == tok!"."))
+        while (!beforeTokens.empty() && continueToken(beforeTokens.back()))
         {
             chain ~= beforeTokens.back();
             beforeTokens.popBack();
         }
-        return complete(sc, chain, pos);
+        _engine.setState(sc, chain, pos);
+        return _engine.complete();
     }
 
     private const(DSymbol)[] complete(const(DSymbol) sc, const(Token)[] tokens, uint pos)
@@ -265,6 +267,6 @@ unittest
     string src = readText("test/simple.d.txt");
     am.setSources(src);
     am.addImportPath("/usr/local/include/d2/");
-    assert(map!(a => a.name())(am.complete(234)).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
+    assert(sort(map!(a => a.name())(am.complete(234)).array()).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
     writeln(map!(a => a.name())(am.complete(1036)));
 }
