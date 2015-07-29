@@ -165,12 +165,48 @@ class DSymbol : ISymbol
 
 struct DType
 {
-    string[] identifiers;
+    SimpleDType[] chain;
 
     string asString() const
     {
-        return join(identifiers, ".");
+        return join(map!(a => a.asString())(chain), ".");
     }
+
+    this(string name, bool builtin = false)
+    {
+        chain = [SimpleDType(name, builtin)];
+    }
+
+    import std.range;
+    this(R)(R r) if (isInputRange!R)
+    {
+        chain = array(map!(a => SimpleDType(a))(r));
+    }
+}
+
+struct SimpleDType
+{
+    string name;
+    bool builtin = false;
+    DType[] templateArguments;
+
+    bool isTemplated() const
+    {
+        return !templateArguments.empty();
+    }
+
+    string asString() const
+    {
+        string res = name;
+        if (isTemplated())
+        {
+            res ~= "!(";
+            res ~= join(map!(a => a.asString())(templateArguments), ",");
+            res ~= ")";
+        }
+        return res;
+    }
+
 }
 
 struct SymbolInfo
@@ -211,7 +247,7 @@ DType toDType(const(Type) type)
     }
     if (type.type2.builtinType != tok!"")
     {
-        return DType([tokToString(type.type2.builtinType)]);
+        return DType(tokToString(type.type2.builtinType), true);
     }
     else if (type.type2.symbol !is null)
     {
@@ -238,7 +274,7 @@ DType toDType(const(Type) type)
             {
                 static string typeToString(const(Type) t)
                 {
-                    return join(toDType(t).identifiers, ".");
+                    return toDType(t).asString();
                 }
                 result ~= (join(array(map!(a => a.type is null ? "AssignExpression" : typeToString(a.type))
                     (ta.templateArgumentList.items)), ", "));

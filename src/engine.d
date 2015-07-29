@@ -9,7 +9,160 @@ import std.algorithm;
 import std.typecons;
 import std.range;
 
-class CompletionEngine
+class SimpleCompletionEngine
+{
+    Rebindable!(const(DSymbol)) _scope;
+    ModuleCache _modules;
+    const(Token)[] _tokens;
+    uint _pos;
+
+    @property const(Token) curr() const
+    {
+        return _tokens.front();
+    }
+
+    bool next()
+    {
+        _tokens.popFront();
+        return !_tokens.empty();
+    }
+
+    bool empty() const
+    {
+        return !_tokens.empty();
+    }
+
+    bool needComplete() const
+    {
+        return _pos < curr.index + curr.text.length;
+    }
+
+    string tokenText() const
+    {
+        return needComplete() ? curr.text[0.._pos - curr.index] : curr.text;
+    }
+
+    alias Callback = const(DSymbol)[] delegate(const(Object));
+    alias CallbackMap = Callback[TypeInfo];
+    alias TokenType = typeof(Token.type);
+    CallbackMap[TokenType] callbacks;
+
+    auto invoke(TokenType t, const(DSymbol) sym)
+    {
+        auto pt = t in callbacks;
+        if (pt is null)
+        {
+            log("Unexpected token type");
+            return null;
+        }
+        auto ps = typeid(typeof(sym)) in *pt;
+        if (ps is null)
+        {
+            auto pdef = typeid(DSymbol) in *pt;
+            if (pdef is null)
+            {
+                log("Unhandled symbol type without default action");
+                return null;
+            }
+            return (*pdef)(sym);
+        }
+        return (*ps)(sym);
+    }
+
+    const(DSymbol)[] dotComplete(const(ImportSymbol) imp)
+    {
+        auto state = _modules.get(imp.name());
+        return state.dmodule().children();
+    }
+    const(DSymbol)[] dotComplete(const(DSymbol) sym)
+    {
+        return sym.children();
+    }
+    const(DSymbol)[] dotComplete(const(VariableSymbol) sym)
+    {
+        return null;
+    }
+
+    const(DSymbol)[] dotCompleteStart(const(DSymbol)[] symbols)
+    {
+        return array(joiner(map!(a => invoke(tok!".", a))(symbols)));
+    }
+
+
+    const(DSymbol)[] identifierComplete(const(ModuleSymbol) mod) { return null; }
+    const(DSymbol)[] scopeComplete(const(DSymbol) s)
+    {
+        typeof(return) res;
+        Rebindable!(const(DSymbol)) scp = s;
+        while (scp !is null)
+        {
+            res ~= scp.children();
+            foreach (const(DSymbol) adop; scp.adopted()) res ~= invoke(tok!".", adop);
+            scp = scp.parent;
+        }
+        return res;
+    }
+
+    this(const(DSymbol) scp, ModuleCache modules, const(Token)[] tokens, uint pos)
+    {
+        _scope = scp;
+        _modules = modules;
+        _tokens = tokens;
+        _pos = pos;
+    }
+
+    template FirstArg(F)
+    {
+        import std.traits;
+        alias FirstArg = ParameterTypeTuple!F[0];
+    }
+
+    auto Dispatch(string action)()
+    {
+        CallbackMap res;
+        foreach (f; __traits(getOverloads, this, action))
+        {
+            alias ST = FirstArg!(typeof(f));
+            res[typeid(FirstArg!(typeof(f)))] = (const(Object) o)
+            {
+                auto v = cast(const(ST))(o);
+                return f(v);
+            };
+        }
+        return res;
+    }
+
+    this()
+    {
+        callbacks[tok!"."] = Dispatch!("dotComplete")();
+        callbacks[tok!"identifier"] = Dispatch!("identifierComplete")();
+    }
+
+    const(DSymbol)[] complete()
+    {
+        auto scp = _scope;
+        if (curr.type == tok!"." && scp.parent !is null)
+        {
+            scp = scp.parent;
+            next();
+        }
+
+        auto symbols = scopeComplete(scp);
+        while (!empty() && !symbols.empty())
+        {
+            switch (curr.type)
+            {
+            case tok!".": symbols = dotCompleteStart(symbols);
+            default: symbols = null;
+            }
+            next();
+        }
+        return symbols;
+    }
+}
+
+
+class SortedCachedCompletionEngine
 {
     CompleterCache _cache;
     Rebindable!(const(DSymbol)) _scope;
@@ -62,7 +215,8 @@ class CompletionEngine
     }
 
     const(DSymbol)[] dotComplete(const(ImportSymbol) imp) { return null; }
-    const(DSymbol)[] dotComplete(const(ModuleSymbol) mod) {return null;}
+    const(DSymbol)[] dotComplete(const(ModuleSymbol) mod) { return null; }
+    const(DSymbol)[] identifierComplete(const(ModuleSymbol) mod) { return null; }
 
     this(const(DSymbol) scp, CompleterCache completer)
     {
@@ -89,6 +243,7 @@ class CompletionEngine
             res ~= _cache.fetch!exact(scp, name);
             foreach (const(DSymbol) s; scp.adopted())
             {
+//                auto modState =
 //                auto adoptedFinder = scoped!SymbolFinder(s);
 //                res ~= adoptedFinder.find!exact(name);
             }
@@ -175,5 +330,11 @@ class CompletionEngine
     this()
     {
         callbacks[tok!"."] = Dispatch!("dotComplete")();
+        callbacks[tok!"identifier"] = Dispatch!("identifierComplete")();
+    }
+
+    const(DSymbol)[] complete(uint pos)
+    {
+        return null;
     }
 }

@@ -17,13 +17,21 @@ import std.array;
 import std.algorithm;
 import std.range;
 
+alias Engine = SimpleCompletionEngine;
+
 class ActiveModule
 {
     debug (print_ast) int ast_depth = 0;
     private CompleterCache _completer;
     private ScopeCache _scopeCache;
     private ModuleCache _moduleCache;
-    private CompletionEngine _engine;
+    private Engine _engine;
+
+    static bool continueSymbol(const(Token) t)
+    {
+        return (t.type == tok!"identifier"
+            || t.type == tok!".");
+    }
 
 
 
