@@ -70,3 +70,8 @@ int main()
     writeln(foo(15));
     writeln("Test");
 }
+
+unittest()
+{
+    UsersDerived.SubClass c;
+}

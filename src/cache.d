@@ -1,5 +1,7 @@
 module cache;
 
+import logger;
+
 class LazyCache(K, V)
 {
     private uint _capacity;
@@ -38,6 +40,7 @@ class LazyCache(K, V)
         {
             val = *p;
         }
+        trace("Cache: get null = ", val is null);
         return val;
     }
 

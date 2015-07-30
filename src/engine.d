@@ -7,7 +7,9 @@ import logger;
 
 import std.algorithm;
 import std.typecons;
+import std.traits;
 import std.range;
+import std.exception;
 
 class SimpleCompletionEngine
 {
@@ -25,12 +27,12 @@ class SimpleCompletionEngine
 
     @property const(Token) curr() const
     {
-        return _tokens.front();
+        return _tokens.back();
     }
 
     bool next()
     {
-        _tokens.popFront();
+        _tokens.popBack();
         return !_tokens.empty();
     }
 
@@ -77,45 +79,97 @@ class SimpleCompletionEngine
         return (*ps)(sym);
     }
 
+    const(DSymbol)[] dotComplete(const(DSymbol) sym)
+    {
+        return inScopeSymbols(sym);
+    }
     const(DSymbol)[] dotComplete(const(ImportSymbol) imp)
     {
         auto state = _modules.get(imp.name());
-        return state.dmodule().children();
-    }
-    const(DSymbol)[] dotComplete(const(DSymbol) sym)
-    {
-        return sym.children();
+        if (state is null)
+        {
+            return null;
+        }
+        return inScopeSymbols(state.dmodule());
     }
     const(DSymbol)[] dotComplete(const(VariableSymbol) sym)
     {
-        return null;
+        auto dtype = sym.type();
+        if (dtype.chain.empty())
+        {
+            return null;
+        }
+        assert(sym !is null);
+        assert(sym.parent !is null);
+
+        auto firstType = dtype.chain.front();
+        if (dtype.chain.front().builtin)
+        {
+            enforce(dtype.chain.length == 1, "Builtin type can not be a part of type chain");
+            // todo
+            // return standart members like max, init, etc
+            return null;
+        }
+        auto symbols = scopeSymbols(sym.parent);
+        foreach (const(SimpleDType) st; dtype.chain)
+        {
+            auto foundSymbols = find(symbols, st.name);
+            if (foundSymbols.length != 1)
+            {
+                // todo
+                // type specializations, various template arguments, etc
+                return null;
+            }
+            symbols = startDotCompletion(foundSymbols);
+        }
+        return symbols;
     }
 
-    const(DSymbol)[] dotCompleteStart(const(DSymbol)[] symbols)
+    const(DSymbol)[] startDotCompletion(const(DSymbol)[] symbols)
     {
-        trace("SCE: dotCompleteStart");
-        return array(joiner(map!(a => invoke(tok!".", a))(symbols)));
+        debug(wlog) trace("SCE: dotCompleteStart");
+        return array(joiner(map!(a => dispatchCall!"dotComplete"(a))(symbols)));
     }
 
-    const(DSymbol)[] identifierCompleteStart(const(DSymbol)[] symbols)
+    const(DSymbol)[] find(bool exact = true)(const(DSymbol)[] symbols, string txt)
     {
-        auto txt = tokenText();
-        trace("SCE: identifierCompleteStart with ", txt);
-        return array(filter!(a => a.name().startsWith(txt))(symbols));
+        debug(wlog) trace("SCE: find with ", txt, " (exact = ", exact, ")");
+        static if (exact)
+        {
+            return array(filter!(a => a.name() == txt)(symbols));
+        }
+        else
+        {
+            return array(filter!(a => a.name().startsWith(txt))(symbols));
+        }
     }
 
-    const(DSymbol)[] scopeComplete(const(DSymbol) s)
+    const(DSymbol)[] find(const(DSymbol)[] symbols, string txt, bool exact)
+    {
+        return exact ? find!true(symbols, txt) : find!false(symbols, txt);
+    }
+
+    const(DSymbol)[] scopeSymbols(const(DSymbol) s)
     {
         typeof(return) res;
         Rebindable!(const(DSymbol)) scp = s;
         while (scp !is null)
         {
             res ~= scp.children();
-            foreach (const(DSymbol) adop; scp.adopted()) res ~= invoke(tok!".", adop);
+            foreach (const(DSymbol) adop; scp.adopted())
+            {
+                trace("SCE: scopeSymbols adopted ", adop.name());
+                res ~= dispatchCall!"dotComplete"(adop);
+            }
             scp = scp.parent;
         }
-        trace("SCE: scopeComplete symbols = ", res.length);
+        debug(wlog) trace("SCE: scopeSymbols symbols = ", res.length);
         return res;
+    }
+
+    const(DSymbol)[] inScopeSymbols(const(DSymbol) s)
+    {
+        return s.children();
     }
 
     template FirstArg(F)
@@ -124,7 +178,24 @@ class SimpleCompletionEngine
         alias FirstArg = ParameterTypeTuple!F[0];
     }
 
-    auto Dispatch(string action)()
+    auto dispatchCall(string action, Args...)(const(Object) o, Args args)
+    {
+        trace("dispatch ", typeid(o));
+        foreach (f; __traits(getOverloads, this, action))
+        {
+            alias ST = FirstArg!(typeof(f));
+            alias UST = Unqual!ST;
+            if (typeid(o) == typeid(UST))
+            {
+                trace("dispatched ", ST.stringof);
+                return f(cast(ST)(o), args);
+            }
+        }
+        trace("dispatched not");
+        return null;
+    }
+
+    auto DispatchMap(string action)()
     {
         CallbackMap res;
         foreach (f; __traits(getOverloads, this, action))
@@ -142,28 +213,28 @@ class SimpleCompletionEngine
     this(ModuleCache modules)
     {
         _modules = modules;
-        callbacks[tok!"."] = Dispatch!("dotComplete")();
+        callbacks[tok!"."] = DispatchMap!("dotComplete")();
     }
 
     const(DSymbol)[] complete()
     {
-        trace("SCE: complete");
+        trace("SCE: complete ", array(map!(t => t.text)(_tokens)));
         auto scp = _scope;
         if (curr.type == tok!"." && scp.parent !is null)
         {
             scp = scp.parent;
             next();
         }
-        trace("SCE: scope = ", scp.name());
-        auto symbols = scopeComplete(scp);
-        trace("SCE: tokens loop ", empty(), " ", symbols.empty());
+        debug(wlog) trace("SCE: scope = ", scp.name());
+        auto symbols = scopeSymbols(scp);
+        debug(wlog) trace("SCE: tokens loop ", empty(), " ", symbols.empty());
         while (!empty() && !symbols.empty())
         {
             trace("SCE: token type ", tokToString(curr.type));
             switch (curr.type)
             {
-            case tok!".": symbols = dotCompleteStart(symbols); break;
-            case tok!"identifier": symbols = identifierCompleteStart(symbols); break;
+            case tok!".": symbols = startDotCompletion(symbols); break;
+            case tok!"identifier": symbols = find(symbols, tokenText(), !needComplete()); break;
             default: symbols = null;
             }
             next();

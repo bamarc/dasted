@@ -81,6 +81,7 @@ class ActiveModule
         mixin VisitNode!(FunctionDeclaration, No.Stop);
         mixin VisitNode!(UnionDeclaration, No.Stop);
         mixin VisitNode!(ImportDeclaration, Yes.Stop);
+        mixin VisitNode!(Unittest, No.Stop);
 
         override void visit(const Declaration decl)
         {
@@ -269,4 +270,5 @@ unittest
     am.addImportPath("/usr/local/include/d2/");
     assert(sort(map!(a => a.name())(am.complete(234)).array()).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
     writeln(map!(a => a.name())(am.complete(1036)));
+    writeln(map!(a => a.name())(am.complete(1109)));
 }
