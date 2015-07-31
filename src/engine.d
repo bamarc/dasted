@@ -191,8 +191,16 @@ class SimpleCompletionEngine
                 return f(cast(ST)(o), args);
             }
         }
-        trace("dispatched not");
-        return null;
+        static if (__traits(compiles, mixin("this." ~ action ~ "(cast(const DSymbol)(o))")))
+        {
+            trace("dispatched const(DSymbol)");
+            mixin("return this." ~ action ~ "(cast(const DSymbol)(o));");
+        }
+        else
+        {
+            trace("dispatched not");
+            return null;
+        }
     }
 
     auto DispatchMap(string action)()

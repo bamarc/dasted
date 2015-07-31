@@ -5,7 +5,7 @@
 	"authors": ["cleem"],
 	"targetPath": "./bin",
 	"sourcePaths": ["src", "./thirdparty/DCD/src/conversion"],
-	"debugVersions": ["wlog", "print", "print_ast"],
+	"debugVersions": ["wlog", "print"],
 	"sourceFiles": [
 		"./thirdparty/DCD/src/actypes.d",
 		"./thirdparty/DCD/src/autocomplete.d",

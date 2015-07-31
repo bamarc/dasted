@@ -269,6 +269,6 @@ unittest
     am.setSources(src);
     am.addImportPath("/usr/local/include/d2/");
     assert(sort(map!(a => a.name())(am.complete(234)).array()).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
-    writeln(map!(a => a.name())(am.complete(1036)));
-    writeln(map!(a => a.name())(am.complete(1109)));
+    assert(sort(map!(a => a.name())(am.complete(1036)).array()).equal(["write", "writef", "writefln", "writeln"]));
+    assert(sort(map!(a => a.name())(am.complete(1109)).array()).equal(["SubClass"]));
 }
