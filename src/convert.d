@@ -1,6 +1,7 @@
 module convert;
 
 import message_struct;
+import dsymbols;
 
 import messages;
 import std.d.ast;
@@ -215,4 +216,9 @@ auto toSymbol(T)(const T node)
     auto conv = scoped!Converter();
     conv.visit(node);
     return conv.result;
+}
+
+Symbol from(const(DSymbol) symbol)
+{
+    return Symbol();
 }

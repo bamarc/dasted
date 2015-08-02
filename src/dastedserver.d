@@ -14,6 +14,8 @@ import std.d.ast;
 import std.d.parser;
 
 import autocomplete;
+import activemodule;
+import convert;
 
 
 class DastedException : Exception
@@ -32,6 +34,8 @@ class Dasted
         socket = new TcpSocket(AddressFamily.INET);
         socket.blocking = true;
         socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, true);
+
+        am = new ActiveModule;
     }
 
     void run(ushort port)
@@ -81,9 +85,11 @@ private:
 
     Reply!(MessageType.COMPLETE) onMessage(const Request!(MessageType.COMPLETE) req)
     {
-        auto dcdReq = toDcdRequest(req);
-        auto resp = complete(dcdReq);
-        return fromDcdResponse!(MessageType.COMPLETE)(resp);
+        am.setSources(req.src);
+        auto symbols = am.complete(req.cursor);
+        import std.algorithm, std.array;
+        auto resp_symbols = map!(a => from(a))(symbols).array();
+        return Reply!(MessageType.COMPLETE)(false, resp_symbols);
     }
 
     Reply!(MessageType.FIND_DECLARATION) onMessage(const Request!(MessageType.FIND_DECLARATION) req)
@@ -95,6 +101,7 @@ private:
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
     {
+        foreach (string path; req.paths) am.addImportPath(path);
         addImportPaths(req.paths);
         return Reply!(MessageType.ADD_IMPORT_PATHS)();
     }
@@ -192,5 +199,7 @@ private:
     ubyte[] outbuffer;
     bool isRunning = false;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
+
+    ActiveModule am;
 
 }
