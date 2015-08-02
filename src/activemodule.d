@@ -271,4 +271,6 @@ unittest
     assert(sort(map!(a => a.name())(am.complete(234)).array()).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
     assert(sort(map!(a => a.name())(am.complete(1036)).array()).equal(["write", "writef", "writefln", "writeln"]));
     assert(sort(map!(a => a.name())(am.complete(1109)).array()).equal(["SubClass"]));
+    assert(sort(map!(a => a.name())(am.complete(1171)).array()).equal(["SubClass", "get"]));
+    assert(sort(map!(a => a.name())(am.complete(1172)).array()).equal(["get"]));
 }

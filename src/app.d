@@ -2,7 +2,7 @@ import std.stdio;
 import std.getopt;
 import message_struct : PROTOCOL_VERSION;
 
-import dasted;
+import dastedserver;
 
 int main(string[] args)
 {

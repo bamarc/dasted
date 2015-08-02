@@ -74,4 +74,6 @@ int main()
 unittest()
 {
     UsersDerived.SubClass c;
+    UsersDerived d1 = new UsersDerived;
+    auto s = d1.get(5, "wow");
 }

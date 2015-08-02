@@ -1,4 +1,4 @@
-module dasted;
+module dastedserver;
 
 import message_struct;
 import dcd_bridge;
