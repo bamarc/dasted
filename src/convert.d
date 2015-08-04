@@ -218,7 +218,37 @@ auto toSymbol(T)(const T node)
     return conv.result;
 }
 
+ubyte toUbyteType(dsymbols.SymbolType s)
+{
+    switch (s)
+    {
+    default:
+    case dsymbols.SymbolType.NO_TYPE:   return '?';
+    case dsymbols.SymbolType.CLASS:     return 'c';
+    case dsymbols.SymbolType.INTERFACE: return 'i';
+    case dsymbols.SymbolType.STRUCT:    return 's';
+    case dsymbols.SymbolType.UNION:     return 'u';
+    case dsymbols.SymbolType.FUNC:      return 'f';
+    case dsymbols.SymbolType.TEMPLATE:  return 't';
+    case dsymbols.SymbolType.MODULE:    return 'M';
+    case dsymbols.SymbolType.PACKAGE:   return 'P';
+    case dsymbols.SymbolType.ENUM:      return 'g';
+    case dsymbols.SymbolType.ENUM_VAR:  return 'e';
+    case dsymbols.SymbolType.VAR:       return 'v';
+    }
+}
+
 Symbol from(const(DSymbol) symbol)
 {
-    return Symbol();
+    Symbol s;
+    s.type = symbol.symbolType().toUbyteType();
+    s.location.filename = symbol.fileName();
+    if (s.location.filename.empty())
+    {
+        s.location.filename = "std";
+    }
+    s.location.cursor = symbol.position.offset;
+    s.name = symbol.name();
+    s.typeName = symbol.type().asString();
+    return s;
 }

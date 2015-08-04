@@ -33,8 +33,6 @@ class ActiveModule
             || t.type == tok!".");
     }
 
-
-
     void addImportPath(string path)
     {
         _moduleCache.addImportPath(path);

@@ -50,6 +50,7 @@ class ModuleState
             visitor._moduleSymbol.rename(baseName(stripExtension(_filename)));
         }
         _module = visitor._moduleSymbol;
+        _module.setFileName(_filename);
     }
 
     static void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)

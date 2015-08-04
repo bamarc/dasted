@@ -87,6 +87,7 @@ interface ISymbol
     SymbolType symbolType() const;
     Position position() const;
     ScopeBlock scopeBlock() const;
+    string fileName() const;
 
     @property inout(DSymbol) parent() inout;
     @property void parent(DSymbol p);
@@ -123,6 +124,11 @@ class DSymbol : ISymbol
         {
             addToParentImpl(parent);
         }
+    }
+
+    override string fileName() const
+    {
+        return parent is null ? "" : parent.fileName();
     }
 
     protected void addToParentImpl(DSymbol parent)

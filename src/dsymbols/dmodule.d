@@ -24,4 +24,17 @@ class ModuleSymbol : DASTSymbol!(SymbolType.MODULE, Module)
         }
         info.position.offset = 0;
     }
+
+    override string fileName() const
+    {
+        return _filename;
+    }
+
+    void setFileName(string value)
+    {
+        _filename = value;
+    }
+
+    private string _filename;
+
 }
