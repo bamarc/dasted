@@ -249,7 +249,7 @@ body
     s.location.filename = symbol.fileName();
     if (s.location.filename.empty())
     {
-        s.location.filename = "std";
+        s.location.filename = "stdin";
     }
     s.location.cursor = symbol.position.offset;
     s.name = symbol.name();

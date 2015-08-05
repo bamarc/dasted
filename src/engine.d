@@ -46,9 +46,9 @@ class SimpleCompletionEngine
         return _pos <= curr.index + curr.text.length;
     }
 
-    string tokenText() const
+    string tokenText(bool shrinkByCursor = true) const
     {
-        return needComplete() ? curr.text[0.._pos - curr.index] : curr.text;
+        return shrinkByCursor && needComplete() ? curr.text[0.._pos - curr.index] : curr.text;
     }
 
     alias Callback = const(DSymbol)[] delegate(const(Object));
@@ -230,7 +230,7 @@ class SimpleCompletionEngine
             switch (curr.type)
             {
             case tok!".": symbols = startDotCompletion(symbols); break;
-            case tok!"identifier": symbols = find(symbols, tokenText(), isFind || !needComplete()); break;
+            case tok!"identifier": symbols = find(symbols, tokenText(!isFind), isFind || !needComplete()); break;
             default: symbols = null;
             }
             next();
