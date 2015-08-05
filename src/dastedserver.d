@@ -39,6 +39,11 @@ class Dasted
         am = new ActiveModule;
     }
 
+    void addImportPath(string path)
+    {
+        am.addImportPath(path);
+    }
+
     void run(ushort port)
     {
         stdout.writeln("Running...");

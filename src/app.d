@@ -1,5 +1,8 @@
 import std.stdio;
 import std.getopt;
+import std.file;
+import std.path;
+import std.range;
 import message_struct : PROTOCOL_VERSION;
 
 import dastedserver;
@@ -8,10 +11,12 @@ int main(string[] args)
 {
     ushort port = 11344;
     bool printVersion;
+    string dmdconf;
 
     getopt(args,
         "port|p", &port,
-        "version", &printVersion);
+        "version", &printVersion,
+        "dmdconf", &dmdconf);
 
     if (printVersion)
     {
@@ -26,6 +31,21 @@ int main(string[] args)
     }
 
     Dasted d = new Dasted;
+
+    if (!dmdconf.empty() && exists(dmdconf) && isFile(dmdconf))
+    {
+        import std.regex, std.conv;
+        auto r = regex("-I([^ ]*)");
+        auto f = File(dmdconf);
+        foreach (line; f.byLine)
+        {
+            foreach (m; matchAll(line, r))
+            {
+                d.addImportPath(to!string(m.captures[1]));
+            }
+        }
+    }
+
     d.run(port);
     return 0;
 }
