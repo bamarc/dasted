@@ -40,7 +40,7 @@ class LazyCache(K, V)
         {
             val = *p;
         }
-        trace("Cache: get null = ", val is null);
+        debug(wlog) trace("Cache: get null = ", val is null);
         return val;
     }
 

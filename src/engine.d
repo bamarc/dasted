@@ -58,7 +58,7 @@ class SimpleCompletionEngine
 
     auto invoke(TokenType t, const(DSymbol) sym)
     {
-        trace("SCE: invoke ", t, " ", sym.name());
+        debug(wlog) trace("SCE: invoke ", t, " ", sym.name());
         auto pt = t in callbacks;
         if (pt is null)
         {
@@ -158,7 +158,7 @@ class SimpleCompletionEngine
             res ~= scp.children();
             foreach (const(DSymbol) adop; scp.adopted())
             {
-                trace("SCE: scopeSymbols adopted ", adop.name());
+                debug(wlog) trace("SCE: scopeSymbols adopted ", adop.name());
                 res ~= dispatchCall!"dotComplete"(adop);
             }
             scp = scp.parent;
@@ -180,53 +180,37 @@ class SimpleCompletionEngine
 
     auto dispatchCall(string action, Args...)(const(Object) o, Args args)
     {
-        trace("dispatch ", typeid(o));
+        debug(wlog) trace("dispatch ", typeid(o));
         foreach (f; __traits(getOverloads, this, action))
         {
             alias ST = FirstArg!(typeof(f));
             alias UST = Unqual!ST;
             if (typeid(o) == typeid(UST))
             {
-                trace("dispatched ", ST.stringof);
+                debug(wlog) trace("dispatched ", ST.stringof);
                 return f(cast(ST)(o), args);
             }
         }
         static if (__traits(compiles, mixin("this." ~ action ~ "(cast(const DSymbol)(o))")))
         {
-            trace("dispatched const(DSymbol)");
+            debug(wlog) trace("dispatched const(DSymbol)");
             mixin("return this." ~ action ~ "(cast(const DSymbol)(o));");
         }
         else
         {
-            trace("dispatched not");
+            debug(wlog) trace("dispatched not");
             return null;
         }
-    }
-
-    auto DispatchMap(string action)()
-    {
-        CallbackMap res;
-        foreach (f; __traits(getOverloads, this, action))
-        {
-            alias ST = FirstArg!(typeof(f));
-            res[typeid(FirstArg!(typeof(f)))] = (const(Object) o)
-            {
-                auto v = cast(const(ST))(o);
-                return f(v);
-            };
-        }
-        return res;
     }
 
     this(ModuleCache modules)
     {
         _modules = modules;
-        callbacks[tok!"."] = DispatchMap!("dotComplete")();
     }
 
-    const(DSymbol)[] complete()
+    const(DSymbol)[] findSymbolChain(bool isFind)
     {
-        trace("SCE: complete ", array(map!(t => t.text)(_tokens)));
+        debug(wlog) trace("SCE: complete ", array(map!(t => t.text)(_tokens)));
         auto scp = _scope;
         if (curr.type == tok!"." && scp.parent !is null)
         {
@@ -238,17 +222,27 @@ class SimpleCompletionEngine
         debug(wlog) trace("SCE: tokens loop ", empty(), " ", symbols.empty());
         while (!empty() && !symbols.empty())
         {
-            trace("SCE: token type ", tokToString(curr.type));
+            debug(wlog) trace("SCE: token type ", tokToString(curr.type));
             switch (curr.type)
             {
             case tok!".": symbols = startDotCompletion(symbols); break;
-            case tok!"identifier": symbols = find(symbols, tokenText(), !needComplete()); break;
+            case tok!"identifier": symbols = find(symbols, tokenText(), isFind || !needComplete()); break;
             default: symbols = null;
             }
             next();
         }
-        trace("SCE: result = ", array(map!(a => a.name())(symbols)));
+        debug(wlog) trace("SCE: result = ", array(map!(a => a.name())(symbols)));
         return symbols;
+    }
+
+    const(DSymbol)[] complete()
+    {
+        return findSymbolChain(false);
+    }
+
+    const(DSymbol)[] findDeclaration()
+    {
+        return findSymbolChain(true);
     }
 }
 

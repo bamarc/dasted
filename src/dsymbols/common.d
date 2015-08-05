@@ -151,14 +151,11 @@ class DSymbol : ISymbol
         _parent = p;
     }
 
-    debug(print)
+    string asString(uint tabs = 0) const
     {
-        string asString(uint tabs = 0) const
-        {
-            import std.range, std.conv, std.array;
-            return to!string(repeat(' ', tabs)) ~ to!string(symbolType())
-                ~ ": " ~ name() ~ " -" ~ type().asString() ~ " +" ~ to!string(position().offset);
-        }
+        import std.range, std.conv, std.array;
+        return to!string(repeat(' ', tabs)) ~ to!string(symbolType())
+            ~ ": " ~ name() ~ " -" ~ type().asString() ~ " +" ~ to!string(position().offset);
     }
 
     abstract void add(DSymbol c);

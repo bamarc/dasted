@@ -2,6 +2,7 @@ module dastedserver;
 
 import message_struct;
 import outline;
+import logger;
 
 import std.exception;
 import std.socket;
@@ -151,6 +152,7 @@ private:
         enforce(vers == PROTOCOL_VERSION, "unsupported protocol version " ~ to!string(vers));
         MessageType type = to!MessageType(inbuffer[uint.sizeof + vers.sizeof]);
         auto msg = unpack(inbuffer[(uint.sizeof + type.sizeof + ubyte.sizeof)..$]);
+        debug(msg) trace(msg.toJSONValue().toString());
         final switch (type)
         {
             mixin(GenerateTypeSwitch!(MessageType));
@@ -160,6 +162,7 @@ private:
 
     void sendReply(T)(const ref T rep)
     {
+        debug(msg) trace(to!string(rep));
         outbuffer = msgpack.pack(rep);
         header = [PROTOCOL_VERSION, rep.type];
     }

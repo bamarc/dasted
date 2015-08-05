@@ -132,11 +132,11 @@ class ActiveModule
         return assumeSorted(_tokenArray).lowerBound(pos);
     }
 
-    const(DSymbol)[] complete(Offset pos)
+    Tuple!(const(DSymbol), const(Token)[]) getState(uint pos)
     {
-        debug(wlog) trace("Complete: command pos = ", pos);
         auto sc = rebindable(getScope(pos));
-        debug(wlog) trace("Complete: scope = ", sc.name());
+        assert(sc !is null);
+        trace("Scope = ", sc.name(), " [", to!string(sc.symbolType()), "] found on pos = ", pos);
         auto beforeTokens = getBeforeTokens(pos);
         const(Token)[] chain;
         while (!beforeTokens.empty() && continueToken(beforeTokens.back()))
@@ -144,13 +144,31 @@ class ActiveModule
             chain ~= beforeTokens.back();
             beforeTokens.popBack();
         }
-        _engine.setState(sc, chain, pos);
-        return _engine.complete();
+        return tuple(sc.get, chain);
+    }
+
+    void updateState(uint pos)
+    {
+        auto state = getState(pos);
+        _engine.setState(state[0], state[1], pos);
+    }
+
+    const(DSymbol)[] complete(Offset pos)
+    {
+        trace("Complete: pos = ", pos);
+        updateState(pos);
+        auto res = _engine.complete();
+        trace("Complete: found ", res.length, " symbols (", join(map!(a => a.name())(res[0..min(3, $)]), ", "), ")");
+        return res;
     }
 
     const(DSymbol)[] find(Offset pos)
     {
-        return null;
+        trace("Find: pos = ", pos);
+        updateState(pos);
+        auto res = _engine.findDeclaration();
+        trace("Find: found ", res.length, " symbols (", join(map!(a => a.name())(res[0..min(3, $)]), ", "), ")");
+        return res;
     }
 
 }
@@ -166,6 +184,8 @@ unittest
     assert(sort(map!(a => a.name())(am.complete(234)).array()).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
     auto writeCompletions = am.complete(1036);
     assert(sort(map!(a => a.name())(writeCompletions).array()).equal(["write", "writef", "writefln", "writeln"]));
+    auto writeDeclarations = am.find(1036);
+    assert(sort(map!(a => a.name())(writeDeclarations).array()).equal(["write"]));
     assert(writeCompletions.front().fileName() == "/usr/local/include/d2/std/stdio.d");
     auto subClassCompletions = am.complete(1109);
     assert(sort(map!(a => a.name())(subClassCompletions).array()).equal(["SubClass"]));
