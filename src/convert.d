@@ -238,6 +238,11 @@ ubyte toUbyteType(dsymbols.SymbolType s)
 }
 
 Symbol from(const(DSymbol) symbol)
+in
+{
+    assert(symbol !is null);
+}
+body
 {
     Symbol s;
     s.type = symbol.symbolType().toUbyteType();

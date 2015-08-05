@@ -212,6 +212,10 @@ class SimpleCompletionEngine
     {
         debug(wlog) trace("SCE: complete ", array(map!(t => t.text)(_tokens)));
         auto scp = _scope;
+        if (empty())
+        {
+            return null;
+        }
         if (curr.type == tok!"." && scp.parent !is null)
         {
             scp = scp.parent;

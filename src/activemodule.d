@@ -34,6 +34,7 @@ class ActiveModule
 
     void addImportPath(string path)
     {
+        trace("Add import path: ", path);
         _moduleCache.addImportPath(path);
     }
 
@@ -50,6 +51,10 @@ class ActiveModule
             override void visit(const T node)
             {
                 auto sym = fromNode(node, _state);
+                if (sym is null)
+                {
+                    return;
+                }
                 debug (print_ast) log(repeat(' ', ast_depth++), T.stringof);
                 foreach (DSymbol s; sym) action(node, _state, _symbol, s);
                 static if(!stop)
@@ -111,6 +116,21 @@ class ActiveModule
 
     void setSources(string text)
     {
+        if (text.empty)
+        {
+            if (_symbol is null)
+            {
+                parseSources(text);
+            }
+            // null message - no update
+            return;
+        }
+        parseSources(text);
+    }
+
+    private void parseSources(string text)
+    {
+        _symbol = null;
         _allocator = new ParseAllocator;
         _cache = StringCache(StringCache.defaultBucketCount);
         auto src = cast(ubyte[])text;

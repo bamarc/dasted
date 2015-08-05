@@ -75,7 +75,15 @@ private:
 
     void processRequest(T)(const T req)
     {
-        auto rep = onMessage(req);
+        typeof(onMessage(req)) rep;
+        try
+        {
+            rep = onMessage(req);
+        }
+        catch (Exception ex)
+        {
+            error(ex.msg);
+        }
         sendReply(rep);
     }
 
@@ -162,7 +170,6 @@ private:
 
     void sendReply(T)(const ref T rep)
     {
-        debug(msg) trace(to!string(rep));
         outbuffer = msgpack.pack(rep);
         header = [PROTOCOL_VERSION, rep.type];
     }
@@ -190,6 +197,7 @@ private:
     {
         enforce(outbuffer.length, "outbuffer is empty");
         uint length = cast(uint)(outbuffer.length + header.sizeof);
+        debug(msg) trace("Message body length = ", length);
         s.send((cast(ubyte*) &length)[0..length.sizeof]);
         s.send(header);
         s.send(outbuffer);

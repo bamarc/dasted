@@ -8,7 +8,7 @@ struct Location
     uint cursor;
 }
 
-enum SymbolType : char
+enum SymbolType : ubyte
 {
     /// Invalid completion kind. This is used internally and will never
      /// be returned in a completion response.
