@@ -10,10 +10,7 @@ import std.d.ast;
 import std.d.lexer;
 import std.d.parser;
 import std.d.formatter;
-import messages;
-import memory.allocators;
 import std.allocator;
-import string_interning;
 
 alias message_struct.Symbol Symbol;
 
@@ -28,7 +25,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
     class Outliner : ASTVisitor
     {
-        alias CompletionKind CK;
+        alias SymbolType CK;
 
         static class OutlineScope
         {
@@ -268,8 +265,8 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
     auto cache = StringCache(StringCache.defaultBucketCount);
     const(Token)[] tokenArray = getTokensForParser(cast(ubyte[]) request.src,
         config, &cache);
-    auto allocator = scoped!(CAllocatorImpl!(BlockAllocator!(1024 * 16)))();
-    auto mod = parseModule(tokenArray, internString("stdin"), allocator, function void(a, b, c, d, e){});
+    auto allocator = scoped!(ParseAllocator)();
+    auto mod = parseModule(tokenArray, "stdin", allocator, function void(a, b, c, d, e){});
     auto outliner = new Outliner;
     outliner.visit(mod);
 

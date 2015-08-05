@@ -10,7 +10,6 @@ import logger;
 import std.d.ast;
 import std.d.parser;
 import std.allocator;
-import memory.allocators;
 
 import std.typecons;
 import std.array;
@@ -96,7 +95,7 @@ class ActiveModule
     ModuleSymbol _symbol;
 
     LexerConfig _config;
-    CAllocatorImpl!(BlockAllocator!(1024 * 16)) _allocator;
+    CAllocator _allocator;
     StringCache _cache;
     const(Token)[] _tokenArray;
 
@@ -112,11 +111,11 @@ class ActiveModule
 
     void setSources(string text)
     {
-        _allocator = new CAllocatorImpl!(BlockAllocator!(1024 * 16))();
+        _allocator = new ParseAllocator;
         _cache = StringCache(StringCache.defaultBucketCount);
         auto src = cast(ubyte[])text;
         _tokenArray = getTokensForParser(src, _config, &_cache);
-        _module = parseModule(_tokenArray, internString("stdin"), _allocator, function(a,b,c,d,e){});
+        _module = parseModule(_tokenArray, "stdin", _allocator, function(a,b,c,d,e){});
         auto visitor = this.new ModuleVisitor(_module);
         visitor.visit(_module);
         _symbol = visitor._moduleSymbol;
@@ -128,17 +127,17 @@ class ActiveModule
         return s is null ? _symbol : s;
     }
 
-    auto getBeforeTokens(uint pos) const
+    auto getBeforeTokens(Offset pos) const
     {
         return assumeSorted(_tokenArray).lowerBound(pos);
     }
 
-    const(DSymbol)[] complete(uint pos)
+    const(DSymbol)[] complete(Offset pos)
     {
         debug(wlog) trace("Complete: command pos = ", pos);
         auto sc = rebindable(getScope(pos));
         debug(wlog) trace("Complete: scope = ", sc.name());
-        auto beforeTokens = assumeSorted(_tokenArray).lowerBound(pos);
+        auto beforeTokens = getBeforeTokens(pos);
         const(Token)[] chain;
         while (!beforeTokens.empty() && continueToken(beforeTokens.back()))
         {
@@ -149,113 +148,11 @@ class ActiveModule
         return _engine.complete();
     }
 
-    private const(DSymbol)[] complete(const(DSymbol) sc, const(Token)[] tokens, uint pos)
+    const(DSymbol)[] find(Offset pos)
     {
-        if (tokens.empty())
-        {
-            return null;
-        }
-        if (tokens.back() != tok!"identifier")
-        {
-            return null;
-        }
-        auto identifier = tokens.back();
-        auto txt = identifier.index + identifier.text.length < pos ? identifier.text : identifier.text[0..pos - identifier.index];
-        debug(wlog) log("tokens back = ", identifier.text);
-        debug(wlog) log("tokens str = ", txt);
-        tokens.popBack();
-        if (tokens.empty())
-        {
-            return doComplete(sc, txt);
-        }
-
-        if (tokens.back() != tok!".")
-        {
-            return null;
-        }
-
-        auto symb = doFind(sc, txt);
-        if (symb.symbolType() == SymbolType.VAR)
-        {
-            //todo
-            //resolve type of var
-            return null;
-        }
-
-        return complete(symb, tokens, pos);
-    }
-
-    const(DSymbol) doFind(const(DSymbol) s, string identifier)
-    {
-        debug(wlog) log(s.asString(), ": ", identifier);
-        Rebindable!(const(DSymbol)) scp = s;
-        CompleterCache completer = _completer;
-        while (scp !is null)
-        {
-            debug(wlog) log(scp.name(), ": ", scp.symbolType());
-            auto symbols = completer.fetchExact(scp, identifier);
-            if (!symbols.empty())
-            {
-                return symbols.front();
-            }
-            foreach (const(DSymbol) ad; scp.adopted())
-            {
-                debug(wlog) log("adopted ", ad.name(), ": ", ad.symbolType());
-                if (ad.symbolType() == SymbolType.MODULE)
-                {
-                    auto modState = _moduleCache.get(ad.name());
-                    if (modState !is null)
-                    {
-                        scp = modState.dmodule();
-                        auto result = modState.findExact(identifier);
-                        if (!result.empty())
-                        {
-                            return result.front();
-                        }
-                    }
-                }
-            }
-            scp = scp.parent;
-        }
         return null;
     }
 
-    const(DSymbol)[] doComplete(const(DSymbol) s, string part)
-    {
-        debug(wlog) log(s.asString(), ": ", part);
-        Rebindable!(const(DSymbol)) scp = s;
-        CompleterCache completer = _completer;
-        while (scp !is null)
-        {
-            debug(wlog) log(scp.name(), ": ", scp.symbolType());
-            auto symbols = completer.fetchPartial(scp, part);
-            if (!symbols.empty())
-            {
-                debug(wlog) log("native", symbols.length);
-                return symbols;
-            }
-            foreach (const(DSymbol) ad; scp.adopted())
-            {
-                debug(wlog) log("adopted ", ad.name(), ": ", ad.symbolType());
-                if (ad.symbolType() == SymbolType.MODULE)
-                {
-                    auto modState = _moduleCache.get(ad.name());
-                    if (modState !is null)
-                    {
-                        scp = modState.dmodule();
-                        auto result = modState.findPartial(part);
-                        if (!result.empty())
-                        {
-                            debug(wlog) log("adopted");
-                            return result;
-                        }
-                    }
-                }
-            }
-            scp = scp.parent;
-        }
-        return null;
-    }
 }
 
 
@@ -267,8 +164,13 @@ unittest
     am.setSources(src);
     am.addImportPath("/usr/local/include/d2/");
     assert(sort(map!(a => a.name())(am.complete(234)).array()).equal(["UsersBase", "UsersDerived", "UsersStruct"]));
-    assert(sort(map!(a => a.name())(am.complete(1036)).array()).equal(["write", "writef", "writefln", "writeln"]));
-    assert(sort(map!(a => a.name())(am.complete(1109)).array()).equal(["SubClass"]));
+    auto writeCompletions = am.complete(1036);
+    assert(sort(map!(a => a.name())(writeCompletions).array()).equal(["write", "writef", "writefln", "writeln"]));
+    assert(writeCompletions.front().fileName() == "/usr/local/include/d2/std/stdio.d");
+    auto subClassCompletions = am.complete(1109);
+    assert(sort(map!(a => a.name())(subClassCompletions).array()).equal(["SubClass"]));
+    assert(subClassCompletions.front().fileName().empty());
     assert(sort(map!(a => a.name())(am.complete(1171)).array()).equal(["SubClass", "get"]));
     assert(sort(map!(a => a.name())(am.complete(1172)).array()).equal(["get"]));
+
 }

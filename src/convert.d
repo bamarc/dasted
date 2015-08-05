@@ -3,7 +3,6 @@ module convert;
 import message_struct;
 import dsymbols;
 
-import messages;
 import std.d.ast;
 import std.d.lexer;
 import std.d.parser;
@@ -18,7 +17,7 @@ auto toSymbol(T)(const T node)
 
     class Converter : ASTVisitor
     {
-        alias CompletionKind CK;
+        alias message_struct.SymbolType CK;
 
         void fromToken(const Token t)
         {

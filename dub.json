@@ -4,33 +4,10 @@
 	"copyright": "Copyright © 2015, cleem",
 	"authors": ["cleem"],
 	"targetPath": "./bin",
-	"sourcePaths": ["src", "./thirdparty/DCD/src/conversion"],
+	"sourcePaths": ["src"],
 	"debugVersions": ["wlog", "print"],
-	"sourceFiles": [
-		"./thirdparty/DCD/src/actypes.d",
-		"./thirdparty/DCD/src/autocomplete.d",
-		"./thirdparty/DCD/src/constants.d",
-		"./thirdparty/DCD/src/messages.d",
-		"./thirdparty/DCD/src/modulecache.d",
-		"./thirdparty/DCD/src/string_interning.d",
-		"./thirdparty/DCD/src/semantic.d",
-		"./thirdparty/DCD/src/stupidlog.d",
-		"./thirdparty/DCD/containers/src/memory/allocators.d",
-		"./thirdparty/DCD/containers/src/memory/appender.d",
-		"./thirdparty/DCD/containers/src/containers/dynamicarray.d",
-		"./thirdparty/DCD/containers/src/containers/ttree.d",
-		"./thirdparty/DCD/containers/src/containers/unrolledlist.d",
-		"./thirdparty/DCD/containers/src/containers/hashset.d",
-		"./thirdparty/DCD/containers/src/containers/internal/hash.d",
-		"./thirdparty/DCD/containers/src/containers/internal/node.d",
-		"./thirdparty/DCD/containers/src/containers/internal/storage_type.d",
-		"./thirdparty/DCD/containers/src/containers/slist.d"
-	],
 	"importPaths": [
-		"./src/",
-		"./thirdparty/DCD/src/",
-		"./thirdparty/DCD/containers/src",
-		"./thirdparty/DCD/libdparse/src"
+		"./src/"
 	],
 	"dependencies": {
 		"libdparse": "~master",

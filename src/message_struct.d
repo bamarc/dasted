@@ -1,7 +1,5 @@
 module message_struct;
 
-import messages;
-
 enum ubyte PROTOCOL_VERSION = 3;
 
 struct Location
@@ -10,7 +8,72 @@ struct Location
     uint cursor;
 }
 
-alias CompletionKind SymbolType;
+enum SymbolType : char
+{
+    /// Invalid completion kind. This is used internally and will never
+     /// be returned in a completion response.
+     dummy = '?',
+
+     /// Import symbol. This is used internally and will never
+     /// be returned in a completion response.
+     importSymbol = '*',
+
+     /// With symbol. This is used internally and will never
+     /// be returned in a completion response.
+     withSymbol = 'w',
+
+     /// class names
+     className = 'c',
+
+     /// interface names
+     interfaceName = 'i',
+
+     /// structure names
+     structName = 's',
+
+     /// union name
+     unionName = 'u',
+
+     /// variable name
+     variableName = 'v',
+
+     /// member variable
+     memberVariableName = 'm',
+
+     /// keyword, built-in version, scope statement
+     keyword = 'k',
+
+     /// function or method
+     functionName = 'f',
+
+     /// enum name
+     enumName = 'g',
+
+     /// enum member
+     enumMember = 'e',
+
+     /// package name
+     packageName = 'P',
+
+     /// module name
+     moduleName = 'M',
+
+     /// array
+     array = 'a',
+
+     /// associative array
+     assocArray = 'A',
+
+     /// alias name
+     aliasName = 'l',
+
+     /// template name
+     templateName = 't',
+
+     /// mixin template name
+     mixinTemplateName = 'T',
+
+ }
 
 struct Symbol
 {

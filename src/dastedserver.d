@@ -1,19 +1,19 @@
 module dastedserver;
 
 import message_struct;
-import dcd_bridge;
 import outline;
 
 import std.exception;
 import std.socket;
 import std.stdio;
 import std.conv;
+import std.array;
+import std.algorithm;
 
 import msgpack;
 import std.d.ast;
 import std.d.parser;
 
-import autocomplete;
 import activemodule;
 import convert;
 
@@ -87,30 +87,29 @@ private:
     {
         am.setSources(req.src);
         auto symbols = am.complete(req.cursor);
-        import std.algorithm, std.array;
         auto resp_symbols = map!(a => from(a))(symbols).array();
         return Reply!(MessageType.COMPLETE)(false, resp_symbols);
     }
 
     Reply!(MessageType.FIND_DECLARATION) onMessage(const Request!(MessageType.FIND_DECLARATION) req)
     {
-        auto dcdReq = toDcdRequest(req);
-        auto resp = findDeclaration(dcdReq);
-        return fromDcdResponse!(MessageType.FIND_DECLARATION)(resp);
+        am.setSources(req.src);
+        auto symbols = am.find(req.cursor);
+        return symbols.empty() ? typeof(return)() : typeof(return)(from(symbols.front()));
     }
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
     {
         foreach (string path; req.paths) am.addImportPath(path);
-        addImportPaths(req.paths);
         return Reply!(MessageType.ADD_IMPORT_PATHS)();
     }
 
     Reply!(MessageType.GET_DOC) onMessage(const Request!(MessageType.GET_DOC) req)
     {
-        auto dcdReq = toDcdRequest(req);
-        auto resp = getDoc(dcdReq);
-        return fromDcdResponse!(MessageType.GET_DOC)(resp);
+        am.setSources(req.src);
+        auto symbols = am.find(req.cursor);
+        auto resp_symbols = map!(a => from(a))(symbols).array();
+        return typeof(return)(resp_symbols);
     }
 
     Reply!(MessageType.OUTLINE) onMessage(const Request!(MessageType.OUTLINE) req)

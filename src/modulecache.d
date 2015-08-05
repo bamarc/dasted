@@ -6,12 +6,10 @@ import completionfilter;
 import scopecache;
 import logger;
 
-import memory.allocators;
 import std.allocator;
 import std.d.ast;
 import std.d.lexer;
 import std.d.parser;
-import string_interning;
 
 import std.typecons;
 import std.range;
@@ -35,14 +33,14 @@ class ModuleState
     private void getModule()
     {
         import std.path;
-        auto allocator = scoped!(CAllocatorImpl!(BlockAllocator!(1024 * 16)))();
+        auto allocator = scoped!(ParseAllocator)();
         auto cache = StringCache(StringCache.defaultBucketCount);
         LexerConfig config;
         config.fileName = "";
         import std.file : readText;
         auto src = cast(ubyte[])readText(_filename);
         auto tokenArray = getTokensForParser(src, config, &cache);
-        auto moduleAst = parseModule(tokenArray, internString("stdin"), allocator, function(a,b,c,d,e){});
+        auto moduleAst = parseModule(tokenArray, "stdin", allocator, function(a,b,c,d,e){});
         auto visitor = scoped!ModuleVisitor(moduleAst);
         visitor.visit(moduleAst);
         if (visitor._moduleSymbol.name().empty())

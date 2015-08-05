@@ -3,8 +3,6 @@ module dsymbols.common;
 public import std.d.lexer;
 public import std.d.ast;
 
-public import string_interning;
-
 import std.algorithm;
 import std.array;
 import std.typecons;
