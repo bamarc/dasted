@@ -15,5 +15,18 @@
 	},
 	"buildRequirements": [
 		"silenceWarnings"
+	],
+	"configurations": [
+		{
+			"name": "server",
+			"targetType": "executable"
+		},
+		{
+			"name": "module-ast",
+			"targetType": "executable",
+			"targetName": "module-ast",
+			"sourceFiles": ["./sample/module_ast.d"],
+			"excludedSourceFiles": ["src/app.d"]
+		}
 	]
 }

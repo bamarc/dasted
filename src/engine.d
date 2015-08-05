@@ -1,7 +1,7 @@
 module engine;
 
 import dsymbols;
-import dmodulecache;
+import modulecache;
 import completionfilter;
 import logger;
 

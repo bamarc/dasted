@@ -1,4 +1,4 @@
-module dmodulecache;
+module modulecache;
 
 import cache;
 import dsymbols;
@@ -204,9 +204,10 @@ class ModuleCache : LazyCache!(string, ModuleState)
             log("Import path already added");
             return;
         }
-        if (!isDir(path))
+        if (!exists(path) || !isDir(path))
         {
-            log("Import path does not seem to be dir");
+            log("Import path does not seem to be valid directory");
+            return;
         }
         _importPaths = path ~ _importPaths;
     }

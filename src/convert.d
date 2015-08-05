@@ -256,3 +256,12 @@ body
     s.typeName = symbol.type().asString();
     return s;
 }
+
+string astString(const(DSymbol) symbol, int depth = 0)
+{
+    import std.range, std.algorithm, std.conv;
+    string res = symbol.asString() ~ "\n";
+    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ a.astString(depth + 1))(symbol.children()));
+    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ "*" ~ a.asString())(symbol.adopted()), "\n");
+    return res;
+}

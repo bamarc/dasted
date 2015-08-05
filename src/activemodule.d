@@ -1,7 +1,7 @@
 module activemodule;
 
 import dsymbols;
-import dmodulecache;
+import modulecache;
 import completionfilter;
 import scopecache;
 import engine;
