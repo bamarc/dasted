@@ -43,7 +43,7 @@ class SimpleCompletionEngine
 
     bool needComplete() const
     {
-        return _pos < curr.index + curr.text.length;
+        return _pos <= curr.index + curr.text.length;
     }
 
     string tokenText() const
