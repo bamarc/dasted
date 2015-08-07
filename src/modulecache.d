@@ -56,6 +56,11 @@ class ModuleState
         symbol.addToParent(parent);
     }
 
+    static auto defaultConstructor(T)(const(T) node, SymbolState st)
+    {
+        return fromNode(node, st);
+    }
+
     static void child(T, R)(const T node, R parent, R symbol)
     {
         parent.add(symbol);
@@ -74,11 +79,17 @@ class ModuleState
             uint ast_depth = 0;
         }
 
-        mixin template VisitNode(T, Flag!"Stop" stop, alias action = defaultAction)
+        mixin template VisitNode(T, Flag!"Stop" stop,
+            alias action = defaultAction,
+            alias constr = defaultConstructor)
         {
             override void visit(const T node)
             {
-                auto sym = fromNode(node, _state);
+                auto sym = constr(node, _state);
+                if (sym.empty())
+                {
+                    return;
+                }
                 debug (print_ast) writeln(repeat(' ', ast_depth++), T.stringof);
                 foreach (DSymbol s; sym) action(node, _state, _symbol, s);
                 static if(!stop)
@@ -106,7 +117,18 @@ class ModuleState
         mixin VisitNode!(VariableDeclaration, Yes.Stop);
         mixin VisitNode!(FunctionDeclaration, Yes.Stop);
         mixin VisitNode!(UnionDeclaration, No.Stop);
-        mixin VisitNode!(ImportDeclaration, Yes.Stop);
+//        mixin VisitNode!(ImportDeclaration, Yes.Stop);
+
+        override void visit(const ImportDeclaration decl)
+        {
+//            if (_state.attributes.any!(a => a.attribute == tok!"public")())
+//            {
+
+//            }
+//            _state.attributes = decl.attributes;
+//            decl.accept(this);
+//            _state.attributes = null;
+        }
 
         override void visit(const Declaration decl)
         {

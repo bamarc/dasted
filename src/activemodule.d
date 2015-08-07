@@ -38,6 +38,21 @@ class ActiveModule
         _moduleCache.addImportPath(path);
     }
 
+    static class SymbolFactory
+    {
+        static ClassSymbol[] create(const(ClassDeclaration) decl, SymbolState st)
+        {
+            typeof(return) res;
+            foreach (s; fromNode(decl, st)) res ~= cast(typeof(res.front()))s;
+            return res;
+        }
+    }
+
+    class PublicImportSymbol
+    {
+
+    }
+
     class ModuleVisitor : ASTVisitor
     {
         void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)

@@ -5,12 +5,12 @@ import dsymbols.common;
 import std.array;
 import std.algorithm;
 
-DSymbol[] fromNode(const ImportDeclaration decl, SymbolState state)
+ImportSymbol[] fromNode(const ImportDeclaration decl, SymbolState state)
 {
     return array(filter!(a => a !is null)(map!(a => fromSingleImportNode(a, state))(decl.singleImports)));
 }
 
-DSymbol fromSingleImportNode(const SingleImport imp, SymbolState state)
+ImportSymbol fromSingleImportNode(const SingleImport imp, SymbolState state)
 {
     return new ImportSymbol(imp, state);
 }

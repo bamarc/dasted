@@ -111,8 +111,12 @@ class DSymbol : ISymbol
     abstract Position position() const;
     abstract ScopeBlock scopeBlock() const;
 
-    abstract inout(DSymbol)[] dotAccess() inout;
-    abstract inout(DSymbol)[] scopeAccess() inout;
+    abstract const(DSymbol)[] dotAccess() const;
+    abstract const(DSymbol)[] scopeAccess(string name, bool exact) const;
+    const(DSymbol)[] scopeAccess() const
+    {
+        return scopeAccess("", false);
+    }
     abstract bool applyTemplateArguments(const DType[] tokens) inout;
     abstract bool applyArguments(const DType[] tokens) inout;
 
@@ -404,14 +408,24 @@ class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
     }
 
 
-    override inout(DSymbol)[] dotAccess() inout
+    override const(DSymbol)[] dotAccess() const
     {
         return _children;
     }
 
-    override inout(DSymbol)[] scopeAccess() inout
+    override const(DSymbol)[] scopeAccess() const
     {
-        return _adopted;
+        typeof(return) res = _children ~ join(map!(a => a.dotAccess())(_adopted));
+        if (parent !is null)
+        {
+            res ~= parent.scopeAccess();
+        }
+        return res;
+    }
+
+    override const(DSymbol)[] scopeAccess(string name, bool exact) const
+    {
+        return exact ? filter!(a => a.name() == name)(scopeAccess()).array() : filter!(a => a.name().startsWith(name))(scopeAccess()).array();
     }
 
     override bool applyTemplateArguments(const DType[] tokens) const

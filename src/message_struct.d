@@ -10,7 +10,7 @@ struct Location
 
 enum SymbolType : ubyte
 {
-    /// Invalid completion kind. This is used internally and will never
+     /// Invalid completion kind. This is used internally and will never
      /// be returned in a completion response.
      dummy = '?',
 
