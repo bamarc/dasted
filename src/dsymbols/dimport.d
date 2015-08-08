@@ -32,6 +32,6 @@ class ImportSymbol : DASTSymbol!(SymbolType.MODULE, SingleImport)
     override void addToParentImpl(DSymbol parent)
     {
         parent.add(this);
-        parent.inject(this);
+        parent.adopt(this);
     }
 }

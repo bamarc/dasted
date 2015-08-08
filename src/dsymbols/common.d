@@ -164,7 +164,7 @@ class DSymbol : ISymbol
 
     abstract void add(DSymbol c);
     abstract inout(DSymbol)[] children() inout;
-    abstract void inject(DSymbol a);
+    abstract void adopt(DSymbol a);
     abstract inout(DSymbol)[] adopted() inout;
 }
 
@@ -392,7 +392,7 @@ class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
         c.parent = this;
     }
 
-    final override void inject(DSymbol a)
+    final override void adopt(DSymbol a)
     {
         _adopted ~= a;
     }

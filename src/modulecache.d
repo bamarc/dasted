@@ -68,7 +68,53 @@ class ModuleState
 
     static void adopt(T, R)(const T node, R parent, R symbol)
     {
-        parent.inject(symbol);
+        parent.adopt(symbol);
+    }
+
+    static class SymbolFactory
+    {
+        static DSymbol[] create(T)(const(T) decl, SymbolState st)
+        {
+            return fromNode(decl, st);
+        }
+
+        static DSymbol[] create(const(ImportDeclaration) decl, SymbolState st)
+        {
+            return null;
+        }
+    }
+
+    class ActiveModuleSymbol : ModuleSymbol
+    {
+        DSymbol[] _injected;
+
+        this(const(Module) mod)
+        {
+            super(mod);
+        }
+
+        override const(DSymbol)[] scopeAccess() const
+        {
+            typeof(return) res = _children ~ join(map!(a => a.dotAccess())(_adopted));
+            if (parent !is null)
+            {
+                res ~= parent.scopeAccess();
+            }
+            return res;
+        }
+
+        override const(DSymbol)[] dotAccess() const
+        {
+            return _children ~ join(map!(a => a.dotAccess())(_injected));
+        }
+    }
+
+    class PublicImportSymbol : ImportSymbol
+    {
+        this(const(SingleImport) decl, SymbolState state)
+        {
+            super(decl, state);
+        }
     }
 
     static class ModuleVisitor : ASTVisitor
