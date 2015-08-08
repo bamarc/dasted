@@ -24,6 +24,7 @@ class ModuleState
     private SysTime _modTime;
     private ModuleSymbol _module;
     private CompleterCache _completer;
+    private SymbolFactory _symbolFactory;
 
     bool isValid() const
     {
@@ -41,7 +42,7 @@ class ModuleState
         auto src = cast(ubyte[])readText(_filename);
         auto tokenArray = getTokensForParser(src, config, &cache);
         auto moduleAst = parseModule(tokenArray, "stdin", allocator, function(a,b,c,d,e){});
-        auto visitor = scoped!ModuleVisitor(moduleAst);
+        auto visitor = new ModuleVisitor(moduleAst);
         visitor.visit(moduleAst);
         if (visitor._moduleSymbol.name().empty())
         {
@@ -56,9 +57,9 @@ class ModuleState
         symbol.addToParent(parent);
     }
 
-    static auto defaultConstructor(T)(const(T) node, SymbolState st)
+    auto defaultConstructor(T)(const(T) node, SymbolState st)
     {
-        return fromNode(node, st);
+        return _symbolFactory.create(node, st);
     }
 
     static void child(T, R)(const T node, R parent, R symbol)
@@ -71,16 +72,27 @@ class ModuleState
         parent.adopt(symbol);
     }
 
-    static class SymbolFactory
+    class SymbolFactory
     {
-        static DSymbol[] create(T)(const(T) decl, SymbolState st)
+        DSymbol[] create(T)(const(T) decl, SymbolState st)
         {
             return fromNode(decl, st);
         }
 
-        static DSymbol[] create(const(ImportDeclaration) decl, SymbolState st)
+        PublicImportSymbol[] createFromNode(const ImportDeclaration decl, SymbolState state)
         {
-            return null;
+            return array(filter!(a => a !is null)(map!(a => createFromSingleImportNode(a, state))(decl.singleImports)));
+        }
+
+        PublicImportSymbol createFromSingleImportNode(const SingleImport imp, SymbolState state)
+        {
+            return new PublicImportSymbol(imp, state);
+        }
+
+        PublicImportSymbol[] create(const(ImportDeclaration) decl, SymbolState st)
+        {
+//            trace(st.attributes.length);
+            return st.attributes.any!(a => a.attribute == tok!"public") ? createFromNode(decl, st) : null;
         }
     }
 
@@ -117,7 +129,7 @@ class ModuleState
         }
     }
 
-    static class ModuleVisitor : ASTVisitor
+    class ModuleVisitor : ASTVisitor
     {
         debug (print_ast)
         {
@@ -126,12 +138,11 @@ class ModuleState
         }
 
         mixin template VisitNode(T, Flag!"Stop" stop,
-            alias action = defaultAction,
-            alias constr = defaultConstructor)
+            alias action = defaultAction)
         {
             override void visit(const T node)
             {
-                auto sym = constr(node, _state);
+                auto sym = _symbolFactory.create(node, _state);
                 if (sym.empty())
                 {
                     return;
@@ -152,29 +163,19 @@ class ModuleState
 
         this(const Module mod)
         {
-            _moduleSymbol = new ModuleSymbol(mod);
+            _moduleSymbol = new ActiveModuleSymbol(mod);
             _symbol = _moduleSymbol;
         }
 
-        private DSymbol _symbol = null;
-        private ModuleSymbol _moduleSymbol = null;
+        private DSymbol _symbol;
+        private ActiveModuleSymbol _moduleSymbol;
+
         mixin VisitNode!(ClassDeclaration, No.Stop);
         mixin VisitNode!(StructDeclaration, No.Stop);
         mixin VisitNode!(VariableDeclaration, Yes.Stop);
         mixin VisitNode!(FunctionDeclaration, Yes.Stop);
         mixin VisitNode!(UnionDeclaration, No.Stop);
-//        mixin VisitNode!(ImportDeclaration, Yes.Stop);
-
-        override void visit(const ImportDeclaration decl)
-        {
-//            if (_state.attributes.any!(a => a.attribute == tok!"public")())
-//            {
-
-//            }
-//            _state.attributes = decl.attributes;
-//            decl.accept(this);
-//            _state.attributes = null;
-        }
+        mixin VisitNode!(ImportDeclaration, Yes.Stop);
 
         override void visit(const Declaration decl)
         {
@@ -197,6 +198,7 @@ class ModuleState
         }
         _filename = filename;
         _modTime = timeLastModified(filename);
+        _symbolFactory = new SymbolFactory;
         getModule();
         _completer = new CompleterCache;
     }

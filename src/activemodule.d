@@ -205,7 +205,7 @@ unittest
     auto writeCompletions = am.complete(1036);
     assert(sort(map!(a => a.name())(writeCompletions).array()).equal(["write", "writef", "writefln", "writeln"]));
     auto writeDeclarations = am.find(1036);
-    assert(sort(map!(a => a.name())(writeDeclarations).array()).equal(["write"]));
+    assert(sort(map!(a => a.name())(writeDeclarations).array()).equal(["writeln"]));
     assert(writeCompletions.front().fileName() == "/usr/local/include/d2/std/stdio.d");
     auto subClassCompletions = am.complete(1109);
     assert(sort(map!(a => a.name())(subClassCompletions).array()).equal(["SubClass"]));
