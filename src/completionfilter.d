@@ -12,8 +12,8 @@ alias CompleterCache = CompletionCache!SortedFilter;
 class SortedFilter
 {
     import std.container.rbtree;
-    alias Second = Rebindable!(const(DSymbol));
-    alias Element = Tuple!(string, Rebindable!(const(DSymbol)));
+    alias Second = DSymbol;
+    alias Element = Tuple!(string, Second);
     alias RBTree = RedBlackTree!(Element, (a, b) => a[0] < b[0]);
     private RBTree mp;
     enum NullSecond = Second.init;
@@ -23,7 +23,7 @@ class SortedFilter
         mp = new RBTree;
     }
 
-    void add(const(DSymbol) sym)
+    void add(DSymbol sym)
     {
         debug(wlog) log(sym.name());
         auto second = rebindable(sym);
@@ -33,7 +33,7 @@ class SortedFilter
     auto getPartial(string part)
     {
         import std.array, std.algorithm;
-        const(DSymbol)[] result = getExact(part);
+        auto result = getExact(part);
         debug(wlog) log(result.length);
         assert(filter!(a => a[0].empty() || a[1] is null)(mp[]).empty());
         auto upper = mp.upperBound(Element(part, NullSecond));
@@ -51,7 +51,7 @@ class SortedFilter
     auto getExact(string id)
     {
         import std.array, std.algorithm;
-        return array(map!(a => a[1].get())(mp.equalRange(Element(id, NullSecond))));
+        return array(map!(a => a[1])(mp.equalRange(Element(id, NullSecond))));
     }
 
     void clear()
@@ -67,28 +67,28 @@ class CompletionCache(T) : LazyCache!(DSymbol, T)
         super(0);
     }
 
-    override T initialize(const(DSymbol) k)
+    override T initialize(DSymbol k)
     {
         debug(wlog) log(k.name());
         auto ret = new T;
-        foreach(const(DSymbol) s; k.dotAccess()) ret.add(s);
+        foreach(s; k.dotAccess()) ret.add(s);
         return ret;
     }
 
-    auto fetchPartial(const(DSymbol) s, string part)
+    auto fetchPartial(DSymbol s, string part)
     {
         debug(wlog) log(part);
         auto filter = get(s);
         return filter.getPartial(part);
     }
 
-    auto fetchExact(const(DSymbol) s, string id)
+    auto fetchExact(DSymbol s, string id)
     {
         auto filter = get(s);
         return filter.getExact(id);
     }
 
-    auto fetch(bool exact)(const(DSymbol) s, string str)
+    auto fetch(bool exact)(DSymbol s, string str)
     {
         static if (exact)
         {

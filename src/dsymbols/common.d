@@ -111,14 +111,14 @@ class DSymbol : ISymbol
     abstract Position position() const;
     abstract ScopeBlock scopeBlock() const;
 
-    abstract const(DSymbol)[] dotAccess() const;
-    abstract const(DSymbol)[] scopeAccess(string name, bool exact) const;
-    const(DSymbol)[] scopeAccess() const
+    abstract DSymbol[] dotAccess();
+    abstract DSymbol[] scopeAccess(string name, bool exact);
+    DSymbol[] scopeAccess()
     {
         return scopeAccess("", false);
     }
-    abstract bool applyTemplateArguments(const DType[] tokens) inout;
-    abstract bool applyArguments(const DType[] tokens) inout;
+    abstract bool applyTemplateArguments(const DType[] tokens);
+    abstract bool applyArguments(const DType[] tokens);
 
     override void addToParent(DSymbol parent)
     {
@@ -326,41 +326,6 @@ class DSymbolWithInfo : DSymbol
     }
 }
 
-template NodeToSymbol(NODE)
-{
-    static assert(false, "Need to specialize");
-}
-
-template NodeToSymbol(NODE : VariableDeclaration)
-{
-    import dsymbols.dvariable;
-    alias NodeToSymbol = VariableSymbol;
-}
-
-template NodeToSymbol(NODE : ClassDeclaration)
-{
-    import dsymbols.dclass;
-    alias NodeToSymbol = ClassSymbol;
-}
-
-template NodeToSymbol(NODE : FunctionDeclaration)
-{
-    import dsymbols.dfunction;
-    alias NodeToSymbol = FunctionSymbol;
-}
-
-template NodeToSymbol(NODE : Module)
-{
-    import dsymbols.dmodule;
-    alias NodeToSymbol = ModuleSymbol;
-}
-
-template NodeToSymbol(NODE : StructDeclaration)
-{
-    import dsymbols.dstruct;
-    alias NodeToSymbol = StructSymbol;
-}
-
 mixin template NodeVisitor(T, alias k, bool STOP)
 {
     override void visit(const T n)
@@ -397,23 +362,19 @@ class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
         _adopted ~= a;
     }
 
-    debug(print)
+    override string asString(uint tabs = 0) const
     {
-        override string asString(uint tabs = 0) const
-        {
-            auto res = super.asString(tabs);
-            foreach (const(DSymbol) c; _children) res ~= "\n" ~ c.asString(tabs + 1);
-            return res;
-        }
+        auto res = super.asString(tabs);
+        foreach (const(DSymbol) c; _children) res ~= "\n" ~ c.asString(tabs + 1);
+        return res;
     }
 
-
-    override const(DSymbol)[] dotAccess() const
+    override DSymbol[] dotAccess()
     {
         return _children;
     }
 
-    override const(DSymbol)[] scopeAccess() const
+    override DSymbol[] scopeAccess()
     {
         typeof(return) res = _children ~ join(map!(a => a.dotAccess())(_adopted));
         if (parent !is null)
@@ -423,17 +384,17 @@ class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
         return res;
     }
 
-    override const(DSymbol)[] scopeAccess(string name, bool exact) const
+    override DSymbol[] scopeAccess(string name, bool exact)
     {
         return exact ? filter!(a => a.name() == name)(scopeAccess()).array() : filter!(a => a.name().startsWith(name))(scopeAccess()).array();
     }
 
-    override bool applyTemplateArguments(const DType[] tokens) const
+    override bool applyTemplateArguments(const DType[] tokens)
     {
         return true;
     }
 
-    override bool applyArguments(const DType[] tokens) const
+    override bool applyArguments(const DType[] tokens)
     {
         return true;
     }

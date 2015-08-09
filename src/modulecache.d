@@ -96,7 +96,7 @@ class ModuleState
         }
     }
 
-    class ActiveModuleSymbol : ModuleSymbol
+    class CachedModuleSymbol : ModuleSymbol
     {
         DSymbol[] _injected;
 
@@ -105,7 +105,7 @@ class ModuleState
             super(mod);
         }
 
-        override const(DSymbol)[] scopeAccess() const
+        override DSymbol[] scopeAccess()
         {
             typeof(return) res = _children ~ join(map!(a => a.dotAccess())(_adopted));
             if (parent !is null)
@@ -115,13 +115,13 @@ class ModuleState
             return res;
         }
 
-        override const(DSymbol)[] dotAccess() const
+        override DSymbol[] dotAccess()
         {
             return _children ~ join(map!(a => a.dotAccess())(_injected));
         }
     }
 
-    class PublicImportSymbol : ImportSymbol
+    public class PublicImportSymbol : ImportSymbol
     {
         this(const(SingleImport) decl, SymbolState state)
         {
@@ -163,12 +163,12 @@ class ModuleState
 
         this(const Module mod)
         {
-            _moduleSymbol = new ActiveModuleSymbol(mod);
+            _moduleSymbol = new CachedModuleSymbol(mod);
             _symbol = _moduleSymbol;
         }
 
         private DSymbol _symbol;
-        private ActiveModuleSymbol _moduleSymbol;
+        private CachedModuleSymbol _moduleSymbol;
 
         mixin VisitNode!(ClassDeclaration, No.Stop);
         mixin VisitNode!(StructDeclaration, No.Stop);
@@ -238,22 +238,22 @@ class ModuleState
         return _module;
     }
 
-    const(DSymbol)[] findExact(string id)
+    DSymbol[] findExact(string id)
     {
         return findExact(_module, id);
     }
 
-    const(DSymbol)[] findExact(const(DSymbol) s, string id)
+    DSymbol[] findExact(DSymbol s, string id)
     {
         return _completer.fetchExact(s, id);
     }
 
-    const(DSymbol)[] findPartial(string part)
+    DSymbol[] findPartial(string part)
     {
         return findPartial(_module, part);
     }
 
-    const(DSymbol)[] findPartial(const(DSymbol) s, string part)
+    DSymbol[] findPartial(DSymbol s, string part)
     {
         return _completer.fetchPartial(_module, part);
     }
@@ -284,7 +284,7 @@ class ModuleCache : LazyCache!(string, ModuleState)
 
     private string[] _importPaths;
 
-    override ModuleState initialize(const(string) s)
+    override ModuleState initialize(string s)
     {
         log("Initialize module ", s);
         auto res = new ModuleState(s, _importPaths);

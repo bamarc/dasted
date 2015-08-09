@@ -17,13 +17,13 @@ class LazyCache(K, V)
         _capacity = capacity;
     }
 
-    abstract V initialize(const(K) key);
+    abstract V initialize(K key);
     bool needUpdate(const(K) key, const(V) value)
     {
         return false;
     }
 
-    V get(const(K) key)
+    V get(K key)
     {
         auto p = key in impl;
         V val;

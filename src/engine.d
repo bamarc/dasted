@@ -13,12 +13,12 @@ import std.exception;
 
 class SimpleCompletionEngine
 {
-    Rebindable!(const(DSymbol)) _scope;
+    DSymbol _scope;
     ModuleCache _modules;
     const(Token)[] _tokens;
     uint _pos;
 
-    void setState(const(DSymbol) scp, const(Token)[] tokens, uint pos)
+    void setState(DSymbol scp, const(Token)[] tokens, uint pos)
     {
         _scope = scp;
         _tokens = tokens;
@@ -56,7 +56,7 @@ class SimpleCompletionEngine
     alias TokenType = typeof(Token.type);
     CallbackMap[TokenType] callbacks;
 
-    auto invoke(TokenType t, const(DSymbol) sym)
+    auto invoke(TokenType t, DSymbol sym)
     {
         debug(wlog) trace("SCE: invoke ", t, " ", sym.name());
         auto pt = t in callbacks;
@@ -79,11 +79,11 @@ class SimpleCompletionEngine
         return (*ps)(sym);
     }
 
-    const(DSymbol)[] dotComplete(const(DSymbol) sym)
+    DSymbol[] dotComplete(DSymbol sym)
     {
         return inScopeSymbols(sym);
     }
-    const(DSymbol)[] dotComplete(const(ImportSymbol) imp)
+    DSymbol[] dotComplete(ImportSymbol imp)
     {
         auto state = _modules.get(imp.name());
         if (state is null)
@@ -92,7 +92,7 @@ class SimpleCompletionEngine
         }
         return inScopeSymbols(state.dmodule());
     }
-    const(DSymbol)[] dotComplete(const(VariableSymbol) sym)
+    DSymbol[] dotComplete(VariableSymbol sym)
     {
         auto dtype = sym.type();
         if (dtype.chain.empty())
@@ -125,13 +125,13 @@ class SimpleCompletionEngine
         return symbols;
     }
 
-    const(DSymbol)[] startDotCompletion(const(DSymbol)[] symbols)
+    DSymbol[] startDotCompletion(DSymbol[] symbols)
     {
         debug(wlog) trace("SCE: dotCompleteStart");
-        return array(joiner(map!(a => dispatchCall!"dotComplete"(a))(symbols)));
+        return array(joiner(map!(a => a.dotAccess())(symbols)));
     }
 
-    const(DSymbol)[] find(bool exact = true)(const(DSymbol)[] symbols, string txt)
+    DSymbol[] find(bool exact = true)(DSymbol[] symbols, string txt)
     {
         debug(wlog) trace("SCE: find with ", txt, " (exact = ", exact, ")");
         static if (exact)
@@ -144,30 +144,17 @@ class SimpleCompletionEngine
         }
     }
 
-    const(DSymbol)[] find(const(DSymbol)[] symbols, string txt, bool exact)
+    DSymbol[] find(DSymbol[] symbols, string txt, bool exact)
     {
         return exact ? find!true(symbols, txt) : find!false(symbols, txt);
     }
 
-    const(DSymbol)[] scopeSymbols(const(DSymbol) s)
+    DSymbol[] scopeSymbols(DSymbol s)
     {
-        typeof(return) res;
-        Rebindable!(const(DSymbol)) scp = s;
-        while (scp !is null)
-        {
-            res ~= scp.children();
-            foreach (const(DSymbol) adop; scp.adopted())
-            {
-                debug(wlog) trace("SCE: scopeSymbols adopted ", adop.name());
-                res ~= dispatchCall!"dotComplete"(adop);
-            }
-            scp = scp.parent;
-        }
-        debug(wlog) trace("SCE: scopeSymbols symbols = ", res.length);
-        return res;
+        return s.scopeAccess();
     }
 
-    const(DSymbol)[] inScopeSymbols(const(DSymbol) s)
+    DSymbol[] inScopeSymbols(DSymbol s)
     {
         return s.children();
     }
@@ -178,7 +165,7 @@ class SimpleCompletionEngine
         alias FirstArg = ParameterTypeTuple!F[0];
     }
 
-    auto dispatchCall(string action, Args...)(const(Object) o, Args args)
+    auto dispatchCall(string action, Args...)(Object o, Args args)
     {
         debug(wlog) trace("dispatch ", typeid(o));
         foreach (f; __traits(getOverloads, this, action))
@@ -194,7 +181,7 @@ class SimpleCompletionEngine
         static if (__traits(compiles, mixin("this." ~ action ~ "(cast(const DSymbol)(o))")))
         {
             debug(wlog) trace("dispatched const(DSymbol)");
-            mixin("return this." ~ action ~ "(cast(const DSymbol)(o));");
+            mixin("return this." ~ action ~ "(cast(DSymbol)(o));");
         }
         else
         {
@@ -208,7 +195,7 @@ class SimpleCompletionEngine
         _modules = modules;
     }
 
-    const(DSymbol)[] findSymbolChain(bool isFind)
+    DSymbol[] findSymbolChain(bool isFind)
     {
         debug(wlog) trace("SCE: complete ", array(map!(t => t.text)(_tokens)));
         auto scp = _scope;
@@ -239,12 +226,12 @@ class SimpleCompletionEngine
         return symbols;
     }
 
-    const(DSymbol)[] complete()
+    DSymbol[] complete()
     {
         return findSymbolChain(false);
     }
 
-    const(DSymbol)[] findDeclaration()
+    DSymbol[] findDeclaration()
     {
         return findSymbolChain(true);
     }
@@ -254,7 +241,7 @@ class SimpleCompletionEngine
 class SortedCachedCompletionEngine
 {
     CompleterCache _cache;
-    Rebindable!(const(DSymbol)) _scope;
+    DSymbol _scope;
     ModuleCache _modules;
 
     const(Token)[] _tokens;
@@ -276,12 +263,12 @@ class SortedCachedCompletionEngine
         return needComplete() ? curr.text[0.._pos - curr.index] : curr.text;
     }
 
-    alias Callback = const(DSymbol)[] delegate(const(Object));
+    alias Callback = DSymbol[] delegate(Object);
     alias CallbackMap = Callback[TypeInfo];
     alias TokenType = typeof(Token.type);
     CallbackMap[TokenType] callbacks;
 
-    auto invoke(TokenType t, const(DSymbol) sym)
+    auto invoke(TokenType t, DSymbol sym)
     {
         auto pt = t in callbacks;
         if (pt is null)
@@ -303,11 +290,11 @@ class SortedCachedCompletionEngine
         return (*ps)(sym);
     }
 
-    const(DSymbol)[] dotComplete(const(ImportSymbol) imp) { return null; }
-    const(DSymbol)[] dotComplete(const(ModuleSymbol) mod) { return null; }
-    const(DSymbol)[] identifierComplete(const(ModuleSymbol) mod) { return null; }
+    DSymbol[] dotComplete(const(ImportSymbol) imp) { return null; }
+    DSymbol[] dotComplete(const(ModuleSymbol) mod) { return null; }
+    DSymbol[] identifierComplete(const(ModuleSymbol) mod) { return null; }
 
-    this(const(DSymbol) scp, CompleterCache completer)
+    this(DSymbol scp, CompleterCache completer)
     {
         _scope = scp;
         if (scp.symbolType() == SymbolType.MODULE)
@@ -323,14 +310,14 @@ class SortedCachedCompletionEngine
         _cache = completer;
     }
 
-    const(DSymbol)[] find(bool exact)(string name)
+    DSymbol[] find(bool exact)(string name)
     {
-        const(DSymbol)[] res;
-        Rebindable!(const(DSymbol)) scp =_scope;
+        typeof(return) res;
+        auto scp = _scope;
         while (scp !is null)
         {
             res ~= _cache.fetch!exact(scp, name);
-            foreach (const(DSymbol) s; scp.adopted())
+            foreach (s; scp.adopted())
             {
 //                auto modState =
 //                auto adoptedFinder = scoped!SymbolFinder(s);
@@ -341,17 +328,17 @@ class SortedCachedCompletionEngine
         return res;
     }
 
-    const(DSymbol)[] findChild(bool exact)(string name)
+    DSymbol[] findChild(bool exact)(string name)
     {
         return _cache.fetch!exact(scp, name);
     }
 
-    const(DSymbol)[] find(const(DSymbol) s, const(Token) t, uint pos)
+    DSymbol[] find(DSymbol s, const(Token) t, uint pos)
     {
         return null;
     }
 
-    const(DSymbol)[] complete(const(DSymbol) s, const(Token)[] chain, uint pos)
+    DSymbol[] complete(DSymbol s, const(Token)[] chain, uint pos)
     {
         auto scp = rebindable(s);
         if (chain.empty())
@@ -407,7 +394,7 @@ class SortedCachedCompletionEngine
         foreach (f; __traits(getOverloads, this, action))
         {
             alias ST = FirstArg!(typeof(f));
-            res[typeid(FirstArg!(typeof(f)))] = (const(Object) o)
+            res[typeid(FirstArg!(typeof(f)))] = (Object o)
             {
                 auto v = cast(ST)(o);
                 return f(v);
@@ -422,7 +409,7 @@ class SortedCachedCompletionEngine
         callbacks[tok!"identifier"] = Dispatch!("identifierComplete")();
     }
 
-    const(DSymbol)[] complete(uint pos)
+    DSymbol[] complete(uint pos)
     {
         return null;
     }

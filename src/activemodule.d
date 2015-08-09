@@ -38,6 +38,26 @@ class ActiveModule
         _moduleCache.addImportPath(path);
     }
 
+    public class ModuleImportSymbol : ImportSymbol
+    {
+        this(const(SingleImport) decl, SymbolState state)
+        {
+            super(decl, state);
+        }
+
+        override DSymbol[] dotAccess()
+        {
+            auto modState = _moduleCache.get(name());
+            if (modState is null)
+            {
+                return null;
+            }
+
+            assert(modState.dmodule !is null);
+            return modState.dmodule.dotAccess();
+        }
+    }
+
     class ModuleVisitor : ASTVisitor
     {
         void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)
@@ -141,7 +161,7 @@ class ActiveModule
         _symbol = visitor._moduleSymbol;
     }
 
-    const(DSymbol) getScope(uint pos)
+    DSymbol getScope(uint pos)
     {
         auto s = _scopeCache.findScope(cast(Offset)pos);
         return s is null ? _symbol : s;
@@ -152,7 +172,7 @@ class ActiveModule
         return assumeSorted(_tokenArray).lowerBound(pos);
     }
 
-    Tuple!(const(DSymbol), const(Token)[]) getState(uint pos)
+    Tuple!(DSymbol, const(Token)[]) getState(uint pos)
     {
         auto sc = rebindable(getScope(pos));
         assert(sc !is null);
@@ -164,7 +184,7 @@ class ActiveModule
             chain ~= beforeTokens.back();
             beforeTokens.popBack();
         }
-        return tuple(sc.get, chain);
+        return tuple(sc, chain);
     }
 
     void updateState(uint pos)
