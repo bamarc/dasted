@@ -38,83 +38,33 @@ class ActiveModule
         _moduleCache.addImportPath(path);
     }
 
-    public class ModuleImportSymbol : ImportSymbol
+    class SymbolFactory
     {
-        this(const(SingleImport) decl, SymbolState state)
+        DSymbol[] create(T)(const(T) decl, SymbolState st)
         {
-            super(decl, state);
+            return fromNode(decl, st);
         }
 
-        override DSymbol[] dotAccess()
+        ModuleImportSymbol[] createFromNode(const ImportDeclaration decl, SymbolState state)
         {
-            auto modState = _moduleCache.get(name());
-            if (modState is null)
+            if (decl is null || decl.singleImports is null)
             {
                 return null;
             }
+            return array(filter!(a => a !is null)(map!(a => createFromSingleImportNode(a, state))(decl.singleImports)));
+        }
 
-            assert(modState.dmodule !is null);
-            return modState.dmodule.dotAccess();
+        ModuleImportSymbol createFromSingleImportNode(const SingleImport imp, SymbolState state)
+        {
+            return new ModuleImportSymbol(imp, state);
+        }
+
+        ModuleImportSymbol[] create(const(ImportDeclaration) decl, SymbolState st)
+        {
+            return createFromNode(decl, st);
         }
     }
 
-    class ModuleVisitor : ASTVisitor
-    {
-        void defaultAction(T, R)(const T node, SymbolState st, R parent, R symbol)
-        {
-            symbol.addToParent(parent);
-            _scopeCache.add(symbol);
-        }
-
-        mixin template VisitNode(T, Flag!"Stop" stop, alias action = defaultAction)
-        {
-            override void visit(const T node)
-            {
-                auto sym = fromNode(node, _state);
-                if (sym is null)
-                {
-                    return;
-                }
-                debug (print_ast) log(repeat(' ', ast_depth++), T.stringof);
-                foreach (DSymbol s; sym) action(node, _state, _symbol, s);
-                static if(!stop)
-                {
-                    auto tmp = _symbol;
-                    assert(sym.length == 1);
-                    _symbol = sym.front();
-                    node.accept(this);
-                    _symbol = tmp;
-                }
-                debug (print_ast) --ast_depth;
-            }
-        }
-
-        this(const Module mod)
-        {
-            _moduleSymbol = new ModuleSymbol(mod);
-            _symbol = _moduleSymbol;
-        }
-
-        private DSymbol _symbol = null;
-        private ModuleSymbol _moduleSymbol = null;
-        mixin VisitNode!(ClassDeclaration, No.Stop);
-        mixin VisitNode!(StructDeclaration, No.Stop);
-        mixin VisitNode!(VariableDeclaration, Yes.Stop);
-        mixin VisitNode!(FunctionDeclaration, No.Stop);
-        mixin VisitNode!(UnionDeclaration, No.Stop);
-        mixin VisitNode!(ImportDeclaration, Yes.Stop);
-        mixin VisitNode!(Unittest, No.Stop);
-
-        override void visit(const Declaration decl)
-        {
-            _state.attributes = decl.attributes;
-            decl.accept(this);
-            _state.attributes = null;
-        }
-
-        private alias visit = ASTVisitor.visit;
-        private SymbolState _state;
-    }
 
     Module _module;
     ModuleSymbol _symbol;

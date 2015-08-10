@@ -11,8 +11,155 @@ import std.traits;
 import std.range;
 import std.exception;
 
+class ModuleVisitor(F) : ASTVisitor
+{
+    alias Factory = F;
+
+    enum ASTMode
+    {
+        OUTLINE = 1 << 1,
+        FULL = 1 << 0,
+        NONE = 0,
+    }
+
+    alias ASTModes = BitFlags!ASTMode;
+    enum NoModes = ASTModes.init;
+    enum AllModes = ~(NoModes);
+
+    mixin template VisitNode(T, ASTModes mode)
+    {
+        override void visit(const(T) node)
+        {
+            auto sym = _symbolFactory.create(_symbol, node, _state);
+            if (sym[0] is null || !(mode & _mode))
+            {
+                return;
+            }
+            debug (print_ast) log(repeat(' ', ast_depth++), T.stringof);
+            auto tmp = _symbol;
+            assert(sym.length == 1);
+            _symbol = sym.front();
+            node.accept(this);
+            _symbol = tmp;
+            debug (print_ast) --ast_depth;
+        }
+    }
+
+    this(const Module mod, ASTMode mode)
+    {
+        _moduleSymbol = symbolFactory.create(mod);
+        _symbol = _moduleSymbol;
+        _symbolFactory = new Factory;
+        _mode = mode;
+    }
+
+    private DSymbol _symbol = null;
+    private ModuleSymbol _moduleSymbol = null;
+
+    mixin VisitNode!(ClassDeclaration, AllModes);
+    mixin VisitNode!(StructDeclaration, AllModes);
+    mixin VisitNode!(VariableDeclaration, NoModes);
+    mixin VisitNode!(FunctionDeclaration, ASTMode.OUTLINE);
+    mixin VisitNode!(UnionDeclaration, AllModes);
+    mixin VisitNode!(ImportDeclaration, NoModes);
+    mixin VisitNode!(Unittest, ASTMode.FULL);
+
+    override void visit(const Declaration decl)
+    {
+        _state.attributes = decl.attributes;
+        decl.accept(this);
+        _state.attributes = null;
+    }
+
+    private alias visit = ASTVisitor.visit;
+    private SymbolState _state;
+    private Factory _symbolFactory;
+    private ASTMode _mode;
+}
+
 class SimpleCompletionEngine
 {
+    class SymbolFactory
+    {
+        CachedModuleSymbol create()
+        {
+            return new CachedModuleSymbol;
+        }
+
+        DSymbol[] create(T)(const(T) decl, SymbolState st)
+        {
+            return fromNode(decl, st);
+        }
+
+        PublicImportSymbol[] createFromNode(const ImportDeclaration decl, SymbolState state)
+        {
+            return array(filter!(a => a !is null)(map!(a => createFromSingleImportNode(a, state))(decl.singleImports)));
+        }
+
+        PublicImportSymbol createFromSingleImportNode(const SingleImport imp, SymbolState state)
+        {
+            return new PublicImportSymbol(imp, state);
+        }
+
+        PublicImportSymbol[] create(const(ImportDeclaration) decl, SymbolState st)
+        {
+            return st.attributes.any!(a => a.attribute == tok!"public") ? createFromNode(decl, st) : null;
+        }
+
+        ModuleImportSymbol[] create(const(ImportDeclaration) decl, SymbolState st)
+        {
+            return createFromNode(decl, st);
+        }
+    }
+
+    class CachedModuleSymbol : ModuleSymbol
+    {
+        PublicImportSymbol[] _injected;
+
+        this(const(Module) mod)
+        {
+            super(mod);
+        }
+
+        void inject(PublicImportSymbol imp)
+        {
+            _injected ~= imp;
+        }
+
+        override DSymbol[] dotAccess()
+        {
+            return _children ~ join(map!(a => a.dotAccess())(_injected));
+        }
+    }
+
+    public class ModuleImportSymbol : ImportSymbol
+    {
+        this(const(SingleImport) decl, SymbolState state)
+        {
+            super(decl, state);
+        }
+
+        override DSymbol[] dotAccess()
+        {
+            auto modState = _moduleCache.get(name());
+            if (modState is null)
+            {
+                return null;
+            }
+
+            assert(modState.dmodule !is null);
+            return modState.dmodule.dotAccess();
+        }
+    }
+
+    public class PublicImportSymbol : ImportSymbol
+    {
+        this(const(SingleImport) decl, SymbolState state)
+        {
+            super(decl, state);
+        }
+    }
+
     DSymbol _scope;
     ModuleCache _modules;
     const(Token)[] _tokens;
@@ -49,34 +196,6 @@ class SimpleCompletionEngine
     string tokenText(bool shrinkByCursor = true) const
     {
         return shrinkByCursor && needComplete() ? curr.text[0.._pos - curr.index] : curr.text;
-    }
-
-    alias Callback = const(DSymbol)[] delegate(const(Object));
-    alias CallbackMap = Callback[TypeInfo];
-    alias TokenType = typeof(Token.type);
-    CallbackMap[TokenType] callbacks;
-
-    auto invoke(TokenType t, DSymbol sym)
-    {
-        debug(wlog) trace("SCE: invoke ", t, " ", sym.name());
-        auto pt = t in callbacks;
-        if (pt is null)
-        {
-            log("Unexpected token type");
-            return null;
-        }
-        auto ps = typeid(typeof(sym)) in *pt;
-        if (ps is null)
-        {
-            auto pdef = typeid(DSymbol) in *pt;
-            if (pdef is null)
-            {
-                log("Unhandled symbol type without default action");
-                return null;
-            }
-            return (*pdef)(sym);
-        }
-        return (*ps)(sym);
     }
 
     DSymbol[] dotComplete(DSymbol sym)
@@ -234,183 +353,5 @@ class SimpleCompletionEngine
     DSymbol[] findDeclaration()
     {
         return findSymbolChain(true);
-    }
-}
-
-
-class SortedCachedCompletionEngine
-{
-    CompleterCache _cache;
-    DSymbol _scope;
-    ModuleCache _modules;
-
-    const(Token)[] _tokens;
-
-    uint _pos;
-
-    @property const(Token) curr() const
-    {
-        return _tokens.front();
-    }
-
-    bool needComplete() const
-    {
-        return _pos < curr.index + curr.text.length;
-    }
-
-    string tokenText() const
-    {
-        return needComplete() ? curr.text[0.._pos - curr.index] : curr.text;
-    }
-
-    alias Callback = DSymbol[] delegate(Object);
-    alias CallbackMap = Callback[TypeInfo];
-    alias TokenType = typeof(Token.type);
-    CallbackMap[TokenType] callbacks;
-
-    auto invoke(TokenType t, DSymbol sym)
-    {
-        auto pt = t in callbacks;
-        if (pt is null)
-        {
-            log("Unexpected token type");
-            return null;
-        }
-        auto ps = typeid(typeof(sym)) in *pt;
-        if (ps is null)
-        {
-            auto pdef = typeid(DSymbol) in *pt;
-            if (pdef is null)
-            {
-                log("Unhandled symbol type without default action");
-                return null;
-            }
-            return (*pdef)(sym);
-        }
-        return (*ps)(sym);
-    }
-
-    DSymbol[] dotComplete(const(ImportSymbol) imp) { return null; }
-    DSymbol[] dotComplete(const(ModuleSymbol) mod) { return null; }
-    DSymbol[] identifierComplete(const(ModuleSymbol) mod) { return null; }
-
-    this(DSymbol scp, CompleterCache completer)
-    {
-        _scope = scp;
-        if (scp.symbolType() == SymbolType.MODULE)
-        {
-            auto st = _modules.get(scp.name());
-            if (st is null)
-            {
-                return;
-            }
-            _cache = st.completer;
-            return;
-        }
-        _cache = completer;
-    }
-
-    DSymbol[] find(bool exact)(string name)
-    {
-        typeof(return) res;
-        auto scp = _scope;
-        while (scp !is null)
-        {
-            res ~= _cache.fetch!exact(scp, name);
-            foreach (s; scp.adopted())
-            {
-//                auto modState =
-//                auto adoptedFinder = scoped!SymbolFinder(s);
-//                res ~= adoptedFinder.find!exact(name);
-            }
-            scp = scp.parent;
-        }
-        return res;
-    }
-
-    DSymbol[] findChild(bool exact)(string name)
-    {
-        return _cache.fetch!exact(scp, name);
-    }
-
-    DSymbol[] find(DSymbol s, const(Token) t, uint pos)
-    {
-        return null;
-    }
-
-    DSymbol[] complete(DSymbol s, const(Token)[] chain, uint pos)
-    {
-        auto scp = rebindable(s);
-        if (chain.empty())
-        {
-            return null;
-        }
-
-        auto curr = &chain.front();
-
-        bool next()
-        {
-            chain.popFront();
-            if (chain.empty())
-            {
-                return false;
-            }
-            curr = &chain.front();
-            return true;
-        }
-
-        string text()
-        {
-            return pos > curr.index + curr.text.length ? curr.text : curr.text[0.. pos - curr.index];
-        }
-
-        if (curr.type == tok!".")
-        {
-            if (scp.parent !is null)
-            {
-                scp = scp.parent;
-            }
-            if (!next) return null;
-        }
-
-        auto symbols = find!false(text());
-
-        while (next())
-        {
-            if (curr.type == tok!".") {}
-        }
-        return symbols;
-    }
-
-    template FirstArg(F)
-    {
-        import std.traits;
-        alias FirstArg = ParameterTypeTuple!F[0];
-    }
-
-    auto Dispatch(string action)()
-    {
-        CallbackMap res;
-        foreach (f; __traits(getOverloads, this, action))
-        {
-            alias ST = FirstArg!(typeof(f));
-            res[typeid(FirstArg!(typeof(f)))] = (Object o)
-            {
-                auto v = cast(ST)(o);
-                return f(v);
-            };
-        }
-        return res;
-    }
-
-    this()
-    {
-        callbacks[tok!"."] = Dispatch!("dotComplete")();
-        callbacks[tok!"identifier"] = Dispatch!("identifierComplete")();
-    }
-
-    DSymbol[] complete(uint pos)
-    {
-        return null;
     }
 }
