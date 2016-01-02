@@ -1,19 +1,18 @@
 module dsymbols.dunion;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const UnionDeclaration decl, SymbolState state)
-{
-    return [new UnionSymbol(decl)];
-}
 
-class UnionSymbol : DASTSymbol!(SymbolType.UNION, UnionDeclaration)
+class UnionSymbol : TypedSymbol!(SymbolType.UNION)
 {
-    this(const UnionDeclaration decl)
+    this(string name, Offset pos, ScopeBlock block)
     {
-        super(decl);
+        _info.name = name;
+        _info.position = pos;
+        _info.scopeBlock = block;
     }
 }

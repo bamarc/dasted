@@ -1,19 +1,18 @@
 module dsymbols.dtemplate;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const TemplateDeclaration decl, SymbolState state)
-{
-    return [new TemplateSymbol(decl)];
-}
 
-class TemplateSymbol : DASTSymbol!(SymbolType.TEMPLATE, TemplateDeclaration)
+class TemplateSymbol : TypedSymbol!(SymbolType.TEMPLATE)
 {
-    this(const TemplateDeclaration decl)
+    this(string name, Offset pos, ScopeBlock block)
     {
-        super(decl);
+        _info.name = name;
+        _info.position = pos;
+        _info.scopeBlock = block;
     }
 }

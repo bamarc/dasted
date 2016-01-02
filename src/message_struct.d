@@ -75,7 +75,7 @@ enum SymbolType : ubyte
 
  }
 
-struct Symbol
+struct MSymbol
 {
     ubyte type;
     Location location;
@@ -87,11 +87,11 @@ struct Symbol
     string doc;
 }
 
-struct Scope
+struct MScope
 {
-    Symbol master;
-    Symbol[] symbols;
-    Scope[] children;
+    MSymbol master;
+    MSymbol[] symbols;
+    MScope[] children;
 }
 
 enum MessageType : ubyte
@@ -183,13 +183,13 @@ struct Reply(MessageType T : MessageType.COMPLETE)
 {
     enum type = T;
     bool calltips;
-    Symbol[] symbols;
+    MSymbol[] symbols;
 }
 
 struct Reply(MessageType T : MessageType.FIND_DECLARATION)
 {
     enum type = T;
-    Symbol symbol;
+    MSymbol symbol;
 }
 
 struct Reply(MessageType T : MessageType.ADD_IMPORT_PATHS)
@@ -201,32 +201,32 @@ struct Reply(MessageType T : MessageType.ADD_IMPORT_PATHS)
 struct Reply(MessageType T : MessageType.GET_DOC)
 {
     enum type = T;
-    Symbol[] symbols;
+    MSymbol[] symbols;
 }
 
 struct Reply(MessageType T : MessageType.OUTLINE)
 {
     enum type = T;
-    Scope global;
+    MScope global;
 }
 
 struct Reply(MessageType T : MessageType.LOCAL_USAGE)
 {
     enum type = T;
-    Symbol[] symbols;
+    MSymbol[] symbols;
 }
 
 struct Reply(MessageType T : MessageType.USAGE)
 {
     enum type = T;
-    Symbol[] symbols;
+    MSymbol[] symbols;
 }
 
 struct Reply(MessageType T : MessageType.CLASS_HIERARCHY)
 {
     enum type = T;
-    Symbol[] base;
-    Symbol[] derived;
+    MSymbol[] base;
+    MSymbol[] derived;
 }
 
 struct Reply(MessageType T : MessageType.SHUTDOWN)

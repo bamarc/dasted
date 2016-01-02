@@ -1,28 +1,16 @@
 module dsymbols.dinterface;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
 import std.algorithm;
 import std.array;
 
-DSymbol[] fromNode(const InterfaceDeclaration decl, SymbolState state)
+class InterfaceSymbol : TypedSymbol!(SymbolType.INTERFACE)
 {
-    return [new InterfaceSymbol(decl)];
-}
-
-class InterfaceSymbol : DASTSymbol!(SymbolType.INTERFACE, InterfaceDeclaration)
-{
-    private ScopeBlock _block;
-
-    this(const InterfaceDeclaration decl)
+    this(string name, ScopeBlock block)
     {
-        super(decl);
-        auto bdy = decl.structBody;
-        _block = ScopeBlock(cast(Offset)bdy.startLocation, cast(Offset)bdy.endLocation);
-    }
-
-    override ScopeBlock scopeBlock() const
-    {
-        return _block;
+        _info.name = name;
+        _info.scopeBlock = block;
     }
 }

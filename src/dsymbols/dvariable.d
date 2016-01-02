@@ -1,37 +1,26 @@
 module dsymbols.dvariable;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
 import std.array;
 import std.algorithm;
 
-DSymbol[] fromNode(const VariableDeclaration decl, SymbolState state)
-{
-    return array(map!(a => fromNode(decl, a))(decl.declarators));
-}
 
-DSymbol fromNode(const VariableDeclaration v, const Declarator d)
+class VariableSymbol : TypedSymbol!(SymbolType.VAR)
 {
-    return new VariableSymbol(v, d);
-}
-
-class VariableSymbol : DASTSymbol!(SymbolType.VAR, VariableDeclaration)
-{
-    const Declarator _decl = null;
-    this(const VariableDeclaration v, const Declarator d)
+    this(string name, Offset pos, DType type)
     {
-        super(v);
-
-        info.name = d.name.text.idup;
-        info.type = toDType(v.type);
-        info.position.offset = cast(Offset)d.name.index;
+        _info.name = name;
+        _info.type = type;
+        _info.position = pos;
     }
 }
 
-class EnumVariableSymbol : DASTSymbol!(SymbolType.ENUM, EnumMember)
+class EnumVariableSymbol : TypedSymbol!(SymbolType.ENUM)
 {
-    this(const EnumMember mem)
+    this(string name)
     {
-       super(mem);
+       _info.name = name;
     }
 }

@@ -1,12 +1,12 @@
 module dsymbols.dpackage;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
-class PackageSymbol : DASTSymbol!(SymbolType.PACKAGE, ModuleDeclaration)
+class PackageSymbol : TypedSymbol!(SymbolType.PACKAGE)
 {
-    this(const ModuleDeclaration decl)
+    this(string name)
     {
-        super(null);
-        _symbolType = SymbolType.PACKAGE;
+        _info.name = name;
     }
 }

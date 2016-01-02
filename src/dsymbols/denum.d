@@ -1,16 +1,12 @@
 module dsymbols.denum;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
-DSymbol[] fromNode(const EnumDeclaration decl, SymbolState state)
+class EnumSymbol : TypedSymbol!(SymbolType.ENUM)
 {
-    return [new EnumSymbol(decl)];
-}
-
-class EnumSymbol : DASTSymbol!(SymbolType.ENUM, EnumDeclaration)
-{
-    this(const EnumDeclaration decl)
+    this(string name)
     {
-        super(decl);
+        _info.name = name;
     }
 }

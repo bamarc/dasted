@@ -1,31 +1,15 @@
 module dsymbols.dscope;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 import dsymbols.dfunction;
 
-DSymbol[] fromNode(const Unittest decl, SymbolState state)
+class UnnamedScopeSymbol : TypedSymbol!(SymbolType.NO_TYPE)
 {
-    if (decl.blockStatement is null)
+    this(string name, Offset pos, ScopeBlock block)
     {
-        return null;
-    }
-    return [new UnnamedScopeSymbol(null, decl.blockStatement.startLocation, decl.blockStatement.endLocation)];
-}
-
-class UnnamedScopeSymbol : DASTSymbol!(SymbolType.NO_TYPE, ExpressionNode)
-{
-    private ScopeBlock _block;
-
-    this(const NodeType decl, ulong start, ulong end)
-    {
-        super(decl);
-
-        info.name = "";
-        _block = ScopeBlock(cast(Offset)start, cast(Offset)end);
-    }
-
-    override ScopeBlock scopeBlock() const
-    {
-        return _block;
+        _info.name = name;
+        _info.position = pos;
+        _info.scopeBlock = block;
     }
 }

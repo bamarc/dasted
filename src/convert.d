@@ -3,14 +3,14 @@ module convert;
 import message_struct;
 import dsymbols;
 
-import std.d.ast;
-import std.d.lexer;
-import std.d.parser;
-import std.d.formatter;
+import dparse.ast;
+import dparse.lexer;
+import dparse.parser;
+import dparse.formatter;
 
 import std.array;
 
-alias message_struct.Symbol Symbol;
+alias message_struct.MSymbol MSymbol;
 
 auto toSymbol(T)(const T node)
 {
@@ -205,7 +205,7 @@ auto toSymbol(T)(const T node)
 
     private:
 
-        Symbol result;
+        MSymbol result;
 
         alias visit = ASTVisitor.visit;
 
@@ -237,31 +237,31 @@ ubyte toUbyteType(dsymbols.SymbolType s)
     }
 }
 
-Symbol from(const(DSymbol) symbol)
+MSymbol from(const(ISymbol) symbol)
 in
 {
     assert(symbol !is null);
 }
 body
 {
-    Symbol s;
+    MSymbol s;
     s.type = symbol.symbolType().toUbyteType();
     s.location.filename = symbol.fileName();
     if (s.location.filename.empty())
     {
         s.location.filename = "stdin";
     }
-    s.location.cursor = symbol.position.offset;
+    s.location.cursor = symbol.position;
     s.name = symbol.name();
     s.typeName = symbol.type().asString();
     return s;
 }
 
-string astString(const(DSymbol) symbol, int depth = 0)
-{
-    import std.range, std.algorithm, std.conv;
-    string res = symbol.asString() ~ "\n";
-    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ a.astString(depth + 1))(symbol.children()));
-    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ "*" ~ a.asString())(symbol.adopted()), "\n");
-    return res;
-}
+//string astString(const(ISymbol) symbol, int depth = 0)
+//{
+//    import std.range, std.algorithm, std.conv;
+//    string res = symbol.asString() ~ "\n";
+//    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ a.astString(depth + 1))(symbol.children()));
+//    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ "*" ~ a.asString())(symbol.adopted()), "\n");
+//    return res;
+//}

@@ -1,37 +1,22 @@
 module dsymbols.dimport;
 
 import dsymbols.common;
+import dsymbols.dsymbolbase;
 
 import std.array;
 import std.algorithm;
 
-ImportSymbol[] fromNode(const ImportDeclaration decl, SymbolState state)
-{
-    return array(filter!(a => a !is null)(map!(a => fromSingleImportNode(a, state))(decl.singleImports)));
-}
 
-ImportSymbol fromSingleImportNode(const SingleImport imp, SymbolState state)
+class ImportSymbol : TypedSymbol!(SymbolType.MODULE)
 {
-    return new ImportSymbol(imp, state);
-}
-
-class ImportSymbol : DASTSymbol!(SymbolType.MODULE, SingleImport)
-{
-    this(const NodeType decl, SymbolState state)
+    this(string[] identifiers, string name, Offset pos)
     {
-        super(decl);
-
-        if (decl.identifierChain is null || decl.identifierChain.identifiers.empty())
-        {
-            return;
-        }
-        info.name = join(array(map!(a => a.text.idup)(decl.identifierChain.identifiers)), ".");
-        info.position.offset = cast(Offset)decl.identifierChain.identifiers.front().index;
+        _name = identifiers;
+        _rename = name;
+        _info.name = name;
+        _info.position = pos;
     }
 
-    override void addToParentImpl(DSymbol parent)
-    {
-        parent.add(this);
-        parent.adopt(this);
-    }
+    string[] _name;
+    string _rename;
 }

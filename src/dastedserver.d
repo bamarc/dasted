@@ -12,8 +12,8 @@ import std.array;
 import std.algorithm;
 
 import msgpack;
-import std.d.ast;
-import std.d.parser;
+import dparse.ast;
+import dparse.parser;
 
 import activemodule;
 import convert;
@@ -41,7 +41,7 @@ class Dasted
 
     void addImportPath(string path)
     {
-        am.addImportPath(path);
+//        am.addImportPath(path);
     }
 
     void run(ushort port)
@@ -99,31 +99,35 @@ private:
 
     Reply!(MessageType.COMPLETE) onMessage(const Request!(MessageType.COMPLETE) req)
     {
-        am.setSources(req.src);
-        auto symbols = am.complete(req.cursor);
-        auto resp_symbols = map!(a => from(a))(symbols).array();
-        return Reply!(MessageType.COMPLETE)(false, resp_symbols);
+        return typeof(return).init;
+//        am.setSources(req.src);
+//        auto symbols = am.complete(req.cursor);
+//        auto resp_symbols = map!(a => from(a))(symbols).array();
+//        return Reply!(MessageType.COMPLETE)(false, resp_symbols);
     }
 
     Reply!(MessageType.FIND_DECLARATION) onMessage(const Request!(MessageType.FIND_DECLARATION) req)
     {
-        am.setSources(req.src);
-        auto symbols = am.find(req.cursor);
-        return symbols.empty() ? typeof(return)() : typeof(return)(from(symbols.front()));
+        return typeof(return).init;
+//        am.setSources(req.src);
+//        auto symbols = am.find(req.cursor);
+//        return symbols.empty() ? typeof(return)() : typeof(return)(from(symbols.front()));
     }
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
     {
-        foreach (string path; req.paths) am.addImportPath(path);
-        return Reply!(MessageType.ADD_IMPORT_PATHS)();
+        return typeof(return).init;
+//        foreach (string path; req.paths) am.addImportPath(path);
+//        return Reply!(MessageType.ADD_IMPORT_PATHS)();
     }
 
     Reply!(MessageType.GET_DOC) onMessage(const Request!(MessageType.GET_DOC) req)
     {
-        am.setSources(req.src);
-        auto symbols = am.find(req.cursor);
-        auto resp_symbols = map!(a => from(a))(symbols).array();
-        return typeof(return)(resp_symbols);
+        return typeof(return).init;
+//        am.setSources(req.src);
+//        auto symbols = am.find(req.cursor);
+//        auto resp_symbols = map!(a => from(a))(symbols).array();
+//        return typeof(return)(resp_symbols);
     }
 
     Reply!(MessageType.OUTLINE) onMessage(const Request!(MessageType.OUTLINE) req)

@@ -6,13 +6,13 @@ import convert;
 import std.array;
 import std.typecons;
 
-import std.d.ast;
-import std.d.lexer;
-import std.d.parser;
-import std.d.formatter;
-import std.allocator;
+import dparse.ast;
+import dparse.lexer;
+import dparse.parser;
+import dparse.formatter;
+import std.experimental.allocator;
 
-alias message_struct.Symbol Symbol;
+alias message_struct.MSymbol MSymbol;
 
 public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUTLINE) request)
 {
@@ -29,9 +29,9 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
         static class OutlineScope
         {
-            Symbol[] subsymbols;
+            MSymbol[] subsymbols;
             OutlineScope[] children;
-            Symbol symbol;
+            MSymbol symbol;
         }
 
         this()
@@ -146,7 +146,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         {
             foreach (const Declarator d; variableDeclaration.declarators)
             {
-                Symbol s;
+                MSymbol s;
                 auto app = appender!(char[])();
                 if (variableDeclaration.type !is null)
                 {
@@ -221,12 +221,12 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
             return result;
         }
 
-        Symbol createSymbol(T)(const ref T node)
+        MSymbol createSymbol(T)(const ref T node)
         {
             return toSymbol(node);
         }
 
-        Symbol createSymbol(ref Symbol s)
+        MSymbol createSymbol(ref MSymbol s)
         {
             return s;
         }
@@ -272,7 +272,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
 
     Reply!(MessageType.OUTLINE) reply;
 
-    static void symCopy(ref Symbol s)
+    static void symCopy(ref MSymbol s)
     {
         import std.algorithm;
         s.name = dcopy(s.name);
@@ -283,7 +283,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         s.doc = dcopy(s.doc);
     }
 
-    static void mergeScopes(ref Scope s, Outliner.OutlineScope os)
+    static void mergeScopes(ref MScope s, Outliner.OutlineScope os)
     {
         s.master = os.symbol;
         s.symbols = os.subsymbols.dup;
@@ -294,7 +294,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
         }
         foreach (cos; os.children)
         {
-            s.children ~= Scope();
+            s.children ~= MScope();
             mergeScopes(s.children.back(), cos);
         }
 

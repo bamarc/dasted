@@ -1,30 +1,17 @@
 module dsymbols.dclass;
 
+import dsymbols.dsymbolbase;
 import dsymbols.common;
 
-import std.array;
 import std.algorithm;
+import std.array;
 
-DSymbol[] fromNode(const ClassDeclaration decl, SymbolState state)
+class ClassSymbol : TypedSymbol!(SymbolType.CLASS)
 {
-    return [new ClassSymbol(decl)];
-}
-
-class ClassSymbol : DASTSymbol!(SymbolType.CLASS, ClassDeclaration)
-{
-    private ScopeBlock _block;
-    this(const ClassDeclaration decl)
+    this(string name, Offset pos, ScopeBlock block)
     {
-        super(decl);
-
-        info.name = decl.name.text.idup;
-        info.position.offset = cast(Offset)decl.name.index;
-        auto bdy = decl.structBody;
-        _block = ScopeBlock(cast(Offset)bdy.startLocation, cast(Offset)bdy.endLocation);
-    }
-
-    override ScopeBlock scopeBlock() const
-    {
-        return _block;
+        _info.name = name;
+        _info.position = pos;
+        _info.scopeBlock = block;
     }
 }

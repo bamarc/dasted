@@ -1,7 +1,7 @@
 module dsymbols.common;
 
-public import std.d.lexer;
-public import std.d.ast;
+public import dparse.lexer;
+public import dparse.ast;
 
 import std.algorithm;
 import std.array;
@@ -23,44 +23,65 @@ enum SymbolType
     VAR,
 }
 
+enum Visibility
+{
+    NONE,
+    PUBLIC = 1 << 0,
+    PRIVATE = 1 << 1,
+    PROTECTED = 1 << 2,
+    PACKAGE = 1 << 3,
+    INTERNAL = 1 << 4,
+}
+
 alias Offset = uint;
+enum BadOffset = uint.max;
 
 struct ScopeBlock
 {
-    Position begin;
-    Position end;
+    Offset begin;
+    Offset end;
+
     bool isValid()
     {
-        return begin.isValid() && end.isValid();
+        return begin != BadOffset && end != BadOffset && begin <= end;
     }
 
     this(Offset b, Offset e)
     {
-        begin.offset = b;
-        end.offset = e;
+        begin = b;
+        end = e;
     }
 }
 
 struct Position
 {
     Offset _offset = Offset.max;
-    Offset _line = Offset.max;
-    Offset _column = Offset.max;
+    string _fileName;
 
-    @property auto offset() const {
+    this(string fileName, Offset offset)
+    {
+        _offset = offset;
+        _fileName = fileName;
+    }
+
+    @property auto offset() const
+    {
         return _offset;
     }
 
-    @property void offset(Offset v) {
+    @property void offset(Offset v)
+    {
         _offset = v;
     }
 
-    @property auto column() const {
-        return _column;
+    @property auto column() const
+    {
+        return 0;
     }
 
-    @property auto line() const {
-        return _line;
+    @property auto line() const
+    {
+        return 0;
     }
 
     bool isValid() const
@@ -69,108 +90,52 @@ struct Position
     }
 }
 
-bool isIn(DSymbol sym, DSymbol scp)
+bool isInside(ISymbol sym, ISymbol scp)
 {
     auto scb = scp.scopeBlock();
-    auto pos = sym.position().offset;
-    return scb.isValid() && scb.begin.offset < pos && scb.end.offset > pos;
+    auto pos = sym.position();
+    return scb.isValid() && scb.begin < pos && scb.end > pos;
 }
 
 interface ISymbol
 {
-    string name() const;
-    void rename(string name);
-    void addToParent(DSymbol parent);
-    inout(DType) type() inout;
     SymbolType symbolType() const;
-    Position position() const;
-    ScopeBlock scopeBlock() const;
+
+    string name() const;
+    inout(DType) type() inout;
+    Offset position() const;
     string fileName() const;
 
-    @property inout(DSymbol) parent() inout;
-    @property void parent(DSymbol p);
-
+    ScopeBlock scopeBlock() const;
     final bool hasScope() const
     {
         return scopeBlock().isValid();
     }
-}
 
-class DSymbol : ISymbol
-{
-    protected SymbolType _symbolType = SymbolType.NO_TYPE;
+    @property inout(ISymbol) parent() inout;
+    @property void parent(ISymbol p);
+    @property Visibility visibility() const;
+    @property void visibility(Visibility v);
 
-    this(SymbolType t = SymbolType.NO_TYPE)
-    {
-        _symbolType = t;
-    }
+    void add(ISymbol s);
+    void inject(ISymbol s);
 
-    abstract string name() const;
-    abstract void rename(string name);
-    abstract inout(DType) type() inout;
-    abstract Position position() const;
-    abstract ScopeBlock scopeBlock() const;
+    ISymbol[] dotAccess();
+    ISymbol[] findInScope(string name, bool exactMatch);
+    ISymbol[] scopeAccess();
 
-    abstract DSymbol[] dotAccess();
-    abstract DSymbol[] scopeAccess(string name, bool exact);
-    DSymbol[] scopeAccess()
-    {
-        return scopeAccess("", false);
-    }
-    abstract bool applyTemplateArguments(const DType[] tokens);
-    abstract bool applyArguments(const DType[] tokens);
+    bool applyTemplateArguments(const DType[] tokens);
+    bool applyArguments(const DType[] tokens);
 
-    override void addToParent(DSymbol parent)
-    {
-        if (parent !is null)
-        {
-            addToParentImpl(parent);
-        }
-    }
-
-    override string fileName() const
-    {
-        return parent is null ? "" : parent.fileName();
-    }
-
-    protected void addToParentImpl(DSymbol parent)
-    {
-        parent.add(this);
-    }
-
-    override SymbolType symbolType() const
-    {
-        return _symbolType;
-    }
-
-    DSymbol _parent;
-
-    @property inout(DSymbol) parent() inout
-    {
-        return _parent;
-    }
-
-    @property void parent(DSymbol p)
-    {
-        _parent = p;
-    }
-
-    string asString(uint tabs = 0) const
-    {
-        import std.range, std.conv, std.array;
-        return to!string(repeat(' ', tabs)) ~ to!string(symbolType())
-            ~ ": " ~ name() ~ " -" ~ type().asString() ~ " +" ~ to!string(position().offset);
-    }
-
-    abstract void add(DSymbol c);
-    abstract inout(DSymbol)[] children() inout;
-    abstract void adopt(DSymbol a);
-    abstract inout(DSymbol)[] adopted() inout;
+    string asString(uint tabs) const;
 }
 
 struct DType
 {
     SimpleDType[] chain;
+    bool builtin = false;
+    bool evaluate = false;
+    string typeString;
 
     string asString() const
     {
@@ -214,34 +179,10 @@ struct SimpleDType
 
 }
 
-struct SymbolInfo
-{
-    SymbolType symbolType;
-    string name;
-    string fullname;
-    DType type;
-    DSymbol[] parameters;
-    DSymbol[] templateParameters;
-    Position[] usage;
-    Position position;
-    ScopeBlock scopeBlock;
-
-    this(const Token tok)
-    {
-        name = tok.text.idup;
-        position.offset = cast(Offset)tok.index;
-    }
-}
-
 string tokToString(IdType t)
 {
-    import std.d.lexer;
+    import dparse.lexer;
     return str(t);
-}
-
-struct SymbolState
-{
-    const(Attribute)[] attributes;
 }
 
 DType toDType(const(Type) type)
@@ -291,126 +232,4 @@ DType toDType(const(Type) type)
     return DType();
 }
 
-class DSymbolWithInfo : DSymbol
-{
-    protected SymbolInfo info;
 
-    this(SymbolType t = SymbolType.NO_TYPE)
-    {
-        super(t);
-    }
-
-    override string name() const
-    {
-        return info.name;
-    }
-
-    override void rename(string name)
-    {
-        info.name = name;
-    }
-
-    override inout(DType) type() inout
-    {
-        return info.type;
-    }
-
-    override Position position() const
-    {
-        return info.position;
-    }
-
-    override ScopeBlock scopeBlock() const
-    {
-        return info.scopeBlock;
-    }
-}
-
-mixin template NodeVisitor(T, alias k, bool STOP)
-{
-    override void visit(const T n)
-    {
-        alias getType = NodeToSymbol!(T);
-        auto tmp = new getType(n);
-        k(tmp);
-        static if (!STOP)
-        {
-            k.visit(n);
-        }
-    }
-}
-
-class DASTSymbol(SymbolType TYPE, NODE) : DSymbolWithInfo
-{
-    alias NodeType = NODE;
-    protected const NodeType _node;
-
-    this(const NODE n)
-    {
-        _node = null;
-        super(TYPE);
-    }
-
-    final override void add(DSymbol c)
-    {
-        _children ~= c;
-        c.parent = this;
-    }
-
-    final override void adopt(DSymbol a)
-    {
-        _adopted ~= a;
-    }
-
-    override string asString(uint tabs = 0) const
-    {
-        auto res = super.asString(tabs);
-        foreach (const(DSymbol) c; _children) res ~= "\n" ~ c.asString(tabs + 1);
-        return res;
-    }
-
-    override DSymbol[] dotAccess()
-    {
-        return _children;
-    }
-
-    override DSymbol[] scopeAccess()
-    {
-        typeof(return) res = _children ~ join(map!(a => a.dotAccess())(_adopted));
-        if (parent !is null)
-        {
-            res ~= parent.scopeAccess();
-        }
-        return res;
-    }
-
-    override DSymbol[] scopeAccess(string name, bool exact)
-    {
-        return exact ? filter!(a => a.name() == name)(scopeAccess()).array() : filter!(a => a.name().startsWith(name))(scopeAccess()).array();
-    }
-
-    override bool applyTemplateArguments(const DType[] tokens)
-    {
-        return true;
-    }
-
-    override bool applyArguments(const DType[] tokens)
-    {
-        return true;
-    }
-
-    override inout(DSymbol)[] children() inout
-    {
-        return _children;
-    }
-
-    override inout(DSymbol)[] adopted() inout
-    {
-        return _adopted;
-    }
-
-
-    protected DSymbol[] _children;
-    protected DSymbol[] _adopted;
-
-}
