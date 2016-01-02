@@ -118,11 +118,12 @@ class ModuleState
 //    }
 }
 
-class ModuleCache : LRUCache!(string, ModuleState)
+class ModuleCache
 {
+    LRUCache!(string, ModuleState) _cache;
     this()
     {
-        super(16);
+        _cache = new LRUCache!(string, ModuleState)(16);
     }
 
     void addImportPath(string path)
@@ -143,7 +144,7 @@ class ModuleCache : LRUCache!(string, ModuleState)
 
     ModuleSymbol getModule(string name)
     {
-        auto res = get(name);
+        auto res = _cache.get(name);
         string fileName;
         if (res[1] && !res[0].needUpdate())
         {
@@ -189,7 +190,7 @@ class ModuleCache : LRUCache!(string, ModuleState)
     void updateModule(string name, string fileName, ModuleSymbol s)
     {
         assert(!fileName.empty());
-        set(name, new ModuleState(fileName, name, s));
+        _cache.set(name, new ModuleState(fileName, name, s));
     }
 
     private string[] _importPaths;
@@ -199,7 +200,7 @@ unittest
 {
     import std.stdio;
     auto ch = new ModuleCache;
-    auto st = ch.get("test/simple.d.txt");
-    writeln(st.dmodule.asString());
+    auto st = ch.getModule("unknownModule");
+    assert(st is null);
 }
 
