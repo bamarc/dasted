@@ -38,9 +38,10 @@ string joinChain(string[] chain)
     return join(chain, '.');
 }
 
-ScopeBlock structBlock(const StructBody sb)
+ScopeBlock fromBlock(Block)(const Block bs)
+    if (is(Block == BlockStatement) || is(Block == StructBody))
 {
-    return sb is null ? ScopeBlock()
-        : ScopeBlock(cast(Offset)sb.startLocation,
-                     cast(Offset)sb.endLocation);
+    return bs is null ? ScopeBlock()
+        : ScopeBlock(cast(Offset)bs.startLocation,
+        cast(Offset)bs.endLocation);
 }

@@ -1,5 +1,6 @@
 module symbolfactory;
 
+import attributeutils;
 import dsymbols;
 import tokenutils;
 
@@ -9,46 +10,26 @@ import dparse.parser;
 
 import std.experimental.allocator;
 
-alias AttributeList = const(Attribute)[];
-
-struct AttributeStackGuard
+struct SymbolState
 {
-    this(AttributeList* stack, AttributeList attr)
-    {
-        _attributes = stack;
-        if (!attr.empty())
-        {
-            (*_attributes) ~= attr;
-            _num = attr.length;
-        }
-    }
-
-    ~this()
-    {
-        if (_num > 0)
-        {
-            (*_attributes) = (*_attributes)[0..$ - _num];
-        }
-    }
-    typeof(AttributeList.init.length) _num;
-    AttributeList* _attributes;
+    AttributeList attributes;
 }
-
 
 class SymbolFactory
 {
-    ISymbol[] create(const Module mod, AttributeList attrs)
+    ModuleSymbol create(const Module mod)
     {
         string[] name = mod.moduleDeclaration is null ?
             null : textChain(mod.moduleDeclaration.moduleName);
         Offset offset = mod.moduleDeclaration is null ?
             BadOffset : offsetChain(mod.moduleDeclaration.moduleName);
-        return [new ModuleSymbol(name, offset)];
+
+        return new ModuleSymbol(name, offset);
     }
 
-    ISymbol[] create(const ImportDeclaration decl, AttributeList attrs)
+    ImportSymbol[] create(const ImportDeclaration decl, SymbolState attrs)
     {
-        ISymbol[] res;
+        ImportSymbol[] res;
         foreach (imp; decl.singleImports)
         {
             res ~= create(imp, attrs);
@@ -56,16 +37,61 @@ class SymbolFactory
         return res;
     }
 
-    ISymbol[] create(const SingleImport imp, AttributeList attrs)
+    ImportSymbol create(const SingleImport imp, SymbolState state)
     {
-        return [new ImportSymbol(textChain(imp.identifierChain),
+        return new ImportSymbol(textChain(imp.identifierChain),
                                  text(imp.rename),
-                                 offset(imp.rename))];
+                                 offset(imp.rename));
     }
 
-    ISymbol[] create(const ClassDeclaration decl, AttributeList attrs)
+    ClassSymbol create(const ClassDeclaration decl, SymbolState state)
     {
-        return [new ClassSymbol(text(decl.name), offset(decl.name),
-            structBlock(decl.structBody))];
+        return new ClassSymbol(text(decl.name), offset(decl.name),
+            fromBlock(decl.structBody));
+    }
+
+    FunctionSymbol create(const FunctionDeclaration decl, SymbolState state)
+    {
+        import std.typecons;
+        Rebindable!(const(BlockStatement)) st;
+        if (decl.functionBody !is null)
+        {
+
+            st = decl.functionBody.blockStatement;
+            if (st is null)
+            {
+                st = decl.functionBody.bodyStatement.blockStatement;
+            }
+        }
+        return new FunctionSymbol(text(decl.name), offset(decl.name),
+            fromBlock(st.get));
+    }
+
+    StructSymbol create(const StructDeclaration decl, SymbolState state)
+    {
+        return new StructSymbol(text(decl.name), offset(decl.name),
+            fromBlock(decl.structBody));
+    }
+
+    VariableSymbol[] create(const VariableDeclaration decl, SymbolState state)
+    {
+        VariableSymbol[] res;
+        DType dtype; // TODO: load type from declaration
+        foreach (d; decl.declarators)
+        {
+            res ~= new VariableSymbol(text(d.name), offset(d.name), dtype);
+        }
+        return res;
+    }
+
+    UnionSymbol create(const UnionDeclaration decl, SymbolState state)
+    {
+        return new UnionSymbol(text(decl.name), offset(decl.name),
+            fromBlock(decl.structBody));
+    }
+
+    DBlock create(const Unittest test, SymbolState state)
+    {
+        return new DBlock(fromBlock(test.blockStatement));
     }
 }
