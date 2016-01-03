@@ -15,13 +15,35 @@ import std.exception;
 
 alias VisibilityMode = BitFlags!Visibility;
 
-enum Hidden = VisibilityMode.init;
-enum AllVisible = ~(Hidden);
+enum VisibilityMode Hidden = VisibilityMode(Visibility.NONE);
+enum VisibilityMode AllVisible =
+    VisibilityMode(Visibility.PUBLIC, Visibility.PRIVATE,
+                   Visibility.PROTECTED, Visibility.PACKAGE,
+                   Visibility.INTERNAL);
+enum OutlineVisible = AllVisible & ~VisibilityMode(Visibility.INTERNAL);
+
 
 
 class ModuleVisitor : ASTVisitor
 {
-    debug(print_ast) int ast_depth = 0;
+public:
+    this(SymbolFactory factory, VisibilityMode mode)
+    {
+        _symbolFactory = factory;
+        _mode = mode;
+    }
+
+    void visitModule(const Module mod)
+    {
+        _moduleSymbol = _symbolFactory.create(mod);
+        _symbol = _moduleSymbol;
+        mod.accept(this);
+    }
+
+    inout(ModuleSymbol) moduleSymbol() inout
+    {
+        return _moduleSymbol;
+    }
 
     mixin template VisitNode(T, Visibility viz, bool shouldStop = false)
     {
@@ -57,9 +79,14 @@ class ModuleVisitor : ASTVisitor
                 sym.parent(_symbol);
                 auto next_symbol = sym;
             }
+            if (next_symbol.hasScope())
+            {
+                _moduleSymbol.addScope(next_symbol);
+            }
             debug (print_ast) log(repeat(' ', ast_depth++), T.stringof);
             static if (!shouldStop)
             {
+
                 auto tmp = _symbol;
                 _symbol = next_symbol;
                 node.accept(this);
@@ -69,18 +96,6 @@ class ModuleVisitor : ASTVisitor
         }
     }
 
-    this(SymbolFactory factory, const Module mod, VisibilityMode mode)
-    {
-        _symbol = _moduleSymbol;
-        _symbolFactory = factory;
-        _mode = mode;
-        _moduleSymbol = _symbolFactory.create(mod);
-        mod.accept(this);
-    }
-
-    private ISymbol _symbol = null;
-    private ModuleSymbol _moduleSymbol = null;
-
     mixin VisitNode!(ClassDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(StructDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(VariableDeclaration, Visibility.PUBLIC, true);
@@ -88,14 +103,18 @@ class ModuleVisitor : ASTVisitor
     mixin VisitNode!(UnionDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(ImportDeclaration, Visibility.PUBLIC, true);
     mixin VisitNode!(Unittest, Visibility.INTERNAL);
-
     override void visit(const Declaration decl)
     {
         AttributeStackGuard(&(_state.attributes), decl.attributes);
         decl.accept(this);
     }
 
+private:
     private alias visit = ASTVisitor.visit;
+
+    debug(print_ast) int ast_depth = 0;
+    private ISymbol _symbol = null;
+    private ModuleSymbol _moduleSymbol = null;
     private SymbolState _state;
     private SymbolFactory _symbolFactory;
     private VisibilityMode _mode;

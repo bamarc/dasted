@@ -1,11 +1,12 @@
 module modulecache;
 
+import astcache;
 import cache;
 import dsymbols.common;
 import dsymbols.dmodule;
 import completionfilter;
-import scopecache;
 import logger;
+import modulevisitor;
 
 import std.experimental.allocator;
 import dparse.ast;
@@ -44,27 +45,6 @@ class ModuleState
         return _module !is null;
     }
 
-//    private void getModule()
-//    {
-//        import std.path;
-//        auto allocator = scoped!(ParseAllocator)();
-//        auto cache = StringCache(StringCache.defaultBucketCount);
-//        LexerConfig config;
-//        config.fileName = "";
-//        import std.file : readText;
-//        auto src = cast(ubyte[])readText(_filename);
-//        auto tokenArray = getTokensForParser(src, config, &cache);
-//        auto moduleAst = parseModule(tokenArray, "stdin", allocator, function(a,b,c,d,e){});
-//        auto visitor = new ModuleVisitor(moduleAst);
-//        visitor.visit(moduleAst);
-//        if (visitor._moduleSymbol.name().empty())
-//        {
-//            visitor._moduleSymbol.rename(baseName(stripExtension(_filename)));
-//        }
-//        _module = visitor._moduleSymbol;
-//        _module.setFileName(_filename);
-//    }
-
     this(string fileName, string moduleName, ModuleSymbol symb)
     {
         _fileName = fileName;
@@ -91,39 +71,19 @@ class ModuleState
     {
         return getModificationTime() > _modTime;
     }
-
-//    this(string moduleName, string[] importPaths)
-//    {
-//        import std.path, std.file, std.string, std.array, std.algorithm;
-//        auto modulePath = split(moduleName, ".");
-//        auto paths = array(map!(a => buildPath(a ~ modulePath) ~ ".d")(importPaths)) ~ moduleName;
-//        debug(wlog) log("paths = ", paths);
-//        auto validPaths = filter!(a => exists(a) && isFile(a))(paths);
-//        debug(wlog) log("valid paths = ", validPaths);
-//        string path;
-//        if (validPaths.empty())
-//        {
-//            log("Module ", moduleName, " not found");
-//        }
-//        else
-//        {
-//            path = validPaths.front();
-//            if (array(validPaths).length != 1)
-//            {
-//                log("Module ", moduleName, " destination is ambiguous: ", validPaths,
-//                    ". The first path will be used only");
-//            }
-//        }
-//        this(path);
-//    }
 }
 
 class ModuleCache
 {
     LRUCache!(string, ModuleState) _cache;
-    this()
+    ASTCache _astCache;
+    ModuleVisitor _visitor;
+
+    this(ModuleVisitor visitor)
     {
         _cache = new LRUCache!(string, ModuleState)(16);
+        _astCache = new ASTCache;
+        _visitor = visitor;
     }
 
     void addImportPath(string path)
@@ -131,12 +91,12 @@ class ModuleCache
         import std.algorithm, std.file;
         if (canFind(_importPaths, path))
         {
-            log("Import path already added.");
+            log("Import path has been already added.");
             return;
         }
         if (!exists(path) || !isDir(path))
         {
-            log("Import path does not seem to be valid directory.");
+            log("Import path does not seem to be a valid directory.");
             return;
         }
         _importPaths = path ~ _importPaths;
@@ -146,37 +106,31 @@ class ModuleCache
     {
         auto res = _cache.get(name);
         string fileName;
-        if (res[1] && !res[0].needUpdate())
+        if (!res[1])
         {
-            return res[0].moduleSymbol();
+            auto paths = computeFilePaths(name);
+            if (paths.empty())
+            {
+                log("Module ", name, " not found.");
+                debug log(" Import paths: ", _importPaths);
+                return null;
+            }
+            if (paths.length > 1)
+            {
+                log("Module ", name, " path is ambiguos");
+                debug log(" Possible paths: ", paths);
+            }
+            fileName = paths.front();
         }
-        return null;
-//        if (!res[1])
-//        {
-//            return null;
-//            auto paths = computeFilePaths(name);
-//            if (paths.empty())
-//            {
-//                log("Module ", name, " not found.");
-//                debug log(" Import paths: ", _importPaths);
-//                return null;
-//            }
-//            if (paths.length > 1)
-//            {
-//                log("Module ", name, " path is ambiguos");
-//                debug log(" Possible paths: ", paths);
-//            }
-//            fileName = paths.front();
-//        }
-//        else
-//        {
-//            fileName = res[0].fileName();
-//            if (!res[0].needUpdate())
-//            {
-//                return res[0].moduleSymbol();
-//            }
-//        }
-//        return null;
+        else
+        {
+            fileName = res[0].fileName();
+            if (!res[0].needUpdate())
+            {
+                return res[0].moduleSymbol();
+            }
+        }
+        return updateModule(name, fileName);
     }
 
     string[] computeFilePaths(string moduleName) const
@@ -187,10 +141,19 @@ class ModuleCache
         return validPaths.array();
     }
 
-    void updateModule(string name, string fileName, ModuleSymbol s)
+    ModuleSymbol updateModule(string name, string fileName)
     {
         assert(!fileName.empty());
-        _cache.set(name, new ModuleState(fileName, name, s));
+        auto res = _astCache.getModule(fileName);
+        auto mod = res[0];
+        if (mod is null)
+        {
+            mod = _astCache.updateModule(fileName, readText(fileName));
+        }
+        _visitor.visitModule(mod);
+        auto ms = _visitor.moduleSymbol();
+        _cache.set(name, new ModuleState(fileName, name, ms));
+        return ms;
     }
 
     private string[] _importPaths;

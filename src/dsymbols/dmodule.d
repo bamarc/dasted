@@ -4,6 +4,10 @@ import dsymbols.common;
 import dsymbols.dsymbolbase;
 import dsymbols.dfunction;
 
+import astcache;
+import modulecache;
+import scopemap;
+
 import std.array;
 import std.algorithm;
 import std.exception;
@@ -18,5 +22,38 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
         _info.position = pos;
     }
 
+    void addScope(ISymbol s)
+    {
+        scopes.add(s);
+    }
+
+    ISymbol findScope(Offset pos)
+    {
+        return scopes.findScope(pos);
+    }
+
+    inout(ModuleCache) moduleCache() inout
+    {
+        return _moduleCache;
+    }
+
+    inout(ASTCache) astCache() inout
+    {
+        return _astCache;
+    }
+
+    void setASTCache(ASTCache c)
+    {
+        _astCache = c;
+    }
+
+    void setModuleCache(ModuleCache c)
+    {
+        _moduleCache = c;
+    }
+
     string[] _nameChain;
+    ScopeMap scopes;
+    ModuleCache _moduleCache;
+    ASTCache _astCache;
 }

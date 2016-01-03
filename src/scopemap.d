@@ -1,4 +1,4 @@
-module scopecache;
+module scopemap;
 
 import dsymbols.common;
 import logger;
@@ -8,7 +8,7 @@ import std.range;
 import std.typecons;
 import std.container.rbtree;
 
-class ScopeCache
+class ScopeMap
 {
 private:
     alias Element = Tuple!(Offset, ISymbol);

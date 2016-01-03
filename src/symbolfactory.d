@@ -12,6 +12,7 @@ import std.experimental.allocator;
 
 struct SymbolState
 {
+    ModuleSymbol moduleSymbol;
     AttributeList attributes;
 }
 
@@ -40,8 +41,9 @@ class SymbolFactory
     ImportSymbol create(const SingleImport imp, SymbolState state)
     {
         return new ImportSymbol(textChain(imp.identifierChain),
-                                 text(imp.rename),
-                                 offset(imp.rename));
+                                text(imp.rename),
+                                offset(imp.rename),
+                                state.moduleSymbol);
     }
 
     ClassSymbol create(const ClassDeclaration decl, SymbolState state)
