@@ -161,8 +161,8 @@ class ModuleCache
 
 unittest
 {
-    import std.stdio;
-    auto ch = new ModuleCache;
+    import symbolfactory;
+    auto ch = new ModuleCache(new ModuleVisitor(new SymbolFactory, AllVisible));
     auto st = ch.getModule("unknownModule");
     assert(st is null);
 }
