@@ -18,8 +18,7 @@ class ASTCache
         _cache = new CacheImpl(8);
     }
 
-    Tuple!(Module, uint) getModule(string fileName,
-        uint rev = ModuleParser.NO_REVISION)
+    Tuple!(Module, uint) getModule(string fileName)
     {
         auto res = _cache.get(fileName);
         return tuple(res[0].getModule(), res[0].revision());

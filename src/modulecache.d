@@ -4,7 +4,6 @@ import astcache;
 import cache;
 import dsymbols.common;
 import dsymbols.dmodule;
-import completionfilter;
 import logger;
 import modulevisitor;
 

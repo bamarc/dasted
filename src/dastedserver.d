@@ -15,7 +15,6 @@ import msgpack;
 import dparse.ast;
 import dparse.parser;
 
-import activemodule;
 import convert;
 
 
@@ -36,7 +35,7 @@ class Dasted
         socket.blocking = true;
         socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, true);
 
-        am = new ActiveModule;
+//        am = new ActiveModule;
     }
 
     void addImportPath(string path)
@@ -219,6 +218,6 @@ private:
     bool isRunning = false;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
 
-    ActiveModule am;
+//    ActiveModule am;
 
 }

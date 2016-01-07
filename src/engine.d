@@ -27,5 +27,25 @@ public:
         _moduleCache = new ModuleCache(_importVisitor);
     }
 
+    void setSource(string fileName, string source, uint revision)
+    {
+        auto res = _astCache.getModule(fileName);
+        if (revision <= res[1])
+        {
+            return;
+        }
+        // TODO: set sources only, lazy parsing
+        auto mod = _astCache.updateModule(fileName, source, revision);
+        _activeVisitor.visitModule(mod);
+    }
 
+    inout(ModuleSymbol) activeModule() inout
+    {
+        return _activeVisitor.moduleSymbol();
+    }
+
+    ISymbol findSymbol(Offset pos)
+    {
+        return activeModule().findScope(pos);
+    }
 }

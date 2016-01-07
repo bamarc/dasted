@@ -4,7 +4,6 @@ import attributeutils;
 import dsymbols;
 import modulecache;
 import symbolfactory;
-import completionfilter;
 import logger;
 
 import std.algorithm;
