@@ -1,5 +1,6 @@
 module dastedserver;
 
+import engine;
 import messages;
 import outline;
 import logger;
@@ -17,6 +18,7 @@ import dparse.parser;
 
 import convert;
 
+alias MT = messages.MessageType;
 
 class DastedException : Exception
 {
@@ -76,6 +78,11 @@ class Dasted
         }
     }
 
+    ubyte[] runOn(ubyte[] inbuffer, MessageType type)
+    {
+        return process(inbuffer, type);
+    }
+
 private:
 
     void processRequest(T)(const T req)
@@ -89,15 +96,15 @@ private:
         {
             error(ex.msg);
         }
-        sendReply(rep);
+        packReply(rep);
     }
 
-    Reply!(MessageType.WRONG_TYPE) onMessage(T)(const T req)
+    Reply!(MT.WRONG_TYPE) onMessage(T)(const T req)
     {
         throw new DastedException("unsupported request type (not implemented yet)");
     }
 
-    Reply!(MessageType.COMPLETE) onMessage(const Request!(MessageType.COMPLETE) req)
+    Reply!(MT.COMPLETE) onMessage(const Request!(MT.COMPLETE) req)
     {
         return typeof(return).init;
 //        am.setSources(req.src);
@@ -106,12 +113,11 @@ private:
 //        return Reply!(MessageType.COMPLETE)(false, resp_symbols);
     }
 
-    Reply!(MessageType.FIND_DECLARATION) onMessage(const Request!(MessageType.FIND_DECLARATION) req)
+    Reply!(MT.FIND_DECLARATION) onMessage(
+        const Request!(MT.FIND_DECLARATION) req)
     {
-        return typeof(return).init;
-//        am.setSources(req.src);
-//        auto symbols = am.find(req.cursor);
-//        return symbols.empty() ? typeof(return)() : typeof(return)(from(symbols.front()));
+        engine.setSource("stdin", req.src, revision++);
+        return typeof(return)(toMSymbol(engine.findSymbol(req.cursor)));
     }
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
@@ -161,23 +167,31 @@ private:
         enum GenerateTypeSwitch = gen();
     }
 
-    void process(Socket s)
+    ubyte[] process(ubyte[] buffer, MessageType type)
     {
-        receive(s);
-        enforce(inbuffer.length > uint.sizeof + ubyte.sizeof + ubyte.sizeof, "message is too small");
-        ubyte vers = to!ubyte(inbuffer[uint.sizeof]);
-        enforce(vers == PROTOCOL_VERSION, "unsupported protocol version " ~ to!string(vers));
-        MessageType type = to!MessageType(inbuffer[uint.sizeof + vers.sizeof]);
-        auto msg = unpack(inbuffer[(uint.sizeof + type.sizeof + ubyte.sizeof)..$]);
+        auto msg = unpack(buffer);
         debug(msg) trace(msg.toJSONValue().toString());
         final switch (type)
         {
             mixin(GenerateTypeSwitch!(MessageType));
         }
+        return outbuffer;
+    }
+
+    void process(Socket s)
+    {
+        receive(s);
+
+        enforce(inbuffer.length > uint.sizeof + ubyte.sizeof + ubyte.sizeof, "message is too small");
+        ubyte vers = to!ubyte(inbuffer[uint.sizeof]);
+        enforce(vers == PROTOCOL_VERSION, "unsupported protocol version " ~ to!string(vers));
+        MessageType type = to!MessageType(inbuffer[uint.sizeof + vers.sizeof]);
+
+        process(inbuffer[(uint.sizeof + type.sizeof + ubyte.sizeof)..$], type);
         send(s);
     }
 
-    void sendReply(T)(const ref T rep)
+    void packReply(T)(const ref T rep)
     {
         outbuffer = msgpack.pack(rep);
         header = [PROTOCOL_VERSION, rep.type];
@@ -219,6 +233,7 @@ private:
     bool isRunning = false;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
 
-//    ActiveModule am;
+    uint revision;
+    Engine engine;
 
 }

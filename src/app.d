@@ -3,7 +3,7 @@ import std.getopt;
 import std.file;
 import std.path;
 import std.range;
-import messages : PROTOCOL_VERSION;
+import messages;
 
 import dastedserver;
 
@@ -12,8 +12,10 @@ int main(string[] args)
     ushort port = 11344;
     bool printVersion;
     string dmdconf;
+    bool daemon;
 
     getopt(args,
+        "d|daemon", &daemon,
         "port|p", &port,
         "version", &printVersion,
         "dmdconf", &dmdconf);
@@ -24,7 +26,7 @@ int main(string[] args)
         return 0;
     }
 
-    if (port <= 0)
+    if (daemon && port <= 0)
     {
         writeln("Invalid port number");
         return 1;
@@ -46,6 +48,22 @@ int main(string[] args)
         }
     }
 
-    d.run(port);
+    if (daemon)
+    {
+        d.run(port);
+    }
+    else
+    {
+        import std.conv;
+        import std.json;
+        import msgpack;
+        auto inputJsonString = stdin.byLine.join("\n");
+        auto j = parseJSON(inputJsonString);
+        auto type = j["type"].integer();
+        auto msg = msgpack.fromJSONValue(j["msg"]).pack();
+        auto rep = d.runOn(msg, to!MessageType(type));
+        writeln(rep.unpack().toJSONValue().toString());
+
+    }
     return 0;
 }

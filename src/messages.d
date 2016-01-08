@@ -106,7 +106,10 @@ enum MessageType : ubyte
     USAGE,
     CLASS_HIERARCHY,
     SHUTDOWN,
+    ERROR,
 }
+
+// Requests
 
 struct Request(MessageType T)
 {

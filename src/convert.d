@@ -237,14 +237,13 @@ ubyte toUbyteType(dsymbols.SymbolType s)
     }
 }
 
-MSymbol from(const(ISymbol) symbol)
-in
-{
-    assert(symbol !is null);
-}
-body
+MSymbol toMSymbol(const(ISymbol) symbol)
 {
     MSymbol s;
+    if (symbol is null)
+    {
+        return s;
+    }
     s.type = symbol.symbolType().toUbyteType();
     s.location.filename = symbol.fileName();
     if (s.location.filename.empty())
