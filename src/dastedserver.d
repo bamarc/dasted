@@ -1,6 +1,6 @@
 module dastedserver;
 
-import message_struct;
+import messages;
 import outline;
 import logger;
 
@@ -33,7 +33,8 @@ class Dasted
     {
         socket = new TcpSocket(AddressFamily.INET);
         socket.blocking = true;
-        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, true);
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR,
+                         true);
 
 //        am = new ActiveModule;
     }

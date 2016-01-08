@@ -1,6 +1,6 @@
 module convert;
 
-import message_struct;
+import messages;
 import dsymbols;
 
 import dparse.ast;
@@ -10,14 +10,14 @@ import dparse.formatter;
 
 import std.array;
 
-alias message_struct.MSymbol MSymbol;
+alias messages.MSymbol MSymbol;
 
 auto toSymbol(T)(const T node)
 {
 
     class Converter : ASTVisitor
     {
-        alias message_struct.SymbolType CK;
+        alias messages.SymbolType CK;
 
         void fromToken(const Token t)
         {

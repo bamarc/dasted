@@ -1,6 +1,6 @@
 module outline;
 
-import message_struct;
+import messages;
 import convert;
 
 import std.array;
@@ -12,7 +12,7 @@ import dparse.parser;
 import dparse.formatter;
 import std.experimental.allocator;
 
-alias message_struct.MSymbol MSymbol;
+alias messages.MSymbol MSymbol;
 
 public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUTLINE) request)
 {

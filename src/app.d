@@ -3,7 +3,7 @@ import std.getopt;
 import std.file;
 import std.path;
 import std.range;
-import message_struct : PROTOCOL_VERSION;
+import messages : PROTOCOL_VERSION;
 
 import dastedserver;
 

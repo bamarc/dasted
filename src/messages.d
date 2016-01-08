@@ -1,4 +1,4 @@
-module message_struct;
+module messages;
 
 enum ubyte PROTOCOL_VERSION = 3;
 
