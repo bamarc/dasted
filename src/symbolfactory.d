@@ -2,6 +2,7 @@ module symbolfactory;
 
 import attributeutils;
 import dsymbols;
+import logger;
 import tokenutils;
 
 import dparse.ast;
@@ -20,8 +21,9 @@ class SymbolFactory
 {
     ModuleSymbol create(const Module mod)
     {
+        debug trace();
         string[] name = mod.moduleDeclaration is null ?
-            null : textChain(mod.moduleDeclaration.moduleName);
+            null : txtChain(mod.moduleDeclaration.moduleName);
         Offset offset = mod.moduleDeclaration is null ?
             BadOffset : offsetChain(mod.moduleDeclaration.moduleName);
 
@@ -40,15 +42,15 @@ class SymbolFactory
 
     ImportSymbol create(const SingleImport imp, SymbolState state)
     {
-        return new ImportSymbol(textChain(imp.identifierChain),
-                                text(imp.rename),
+        return new ImportSymbol(txtChain(imp.identifierChain),
+                                txt(imp.rename),
                                 offset(imp.rename),
                                 state.moduleSymbol);
     }
 
     ClassSymbol create(const ClassDeclaration decl, SymbolState state)
     {
-        return new ClassSymbol(text(decl.name), offset(decl.name),
+        return new ClassSymbol(txt(decl.name), offset(decl.name),
             fromBlock(decl.structBody));
     }
 
@@ -65,13 +67,13 @@ class SymbolFactory
                 st = decl.functionBody.bodyStatement.blockStatement;
             }
         }
-        return new FunctionSymbol(text(decl.name), offset(decl.name),
+        return new FunctionSymbol(txt(decl.name), offset(decl.name),
             fromBlock(st.get));
     }
 
     StructSymbol create(const StructDeclaration decl, SymbolState state)
     {
-        return new StructSymbol(text(decl.name), offset(decl.name),
+        return new StructSymbol(txt(decl.name), offset(decl.name),
             fromBlock(decl.structBody));
     }
 
@@ -81,14 +83,14 @@ class SymbolFactory
         DType dtype; // TODO: load type from declaration
         foreach (d; decl.declarators)
         {
-            res ~= new VariableSymbol(text(d.name), offset(d.name), dtype);
+            res ~= new VariableSymbol(txt(d.name), offset(d.name), dtype);
         }
         return res;
     }
 
     UnionSymbol create(const UnionDeclaration decl, SymbolState state)
     {
-        return new UnionSymbol(text(decl.name), offset(decl.name),
+        return new UnionSymbol(txt(decl.name), offset(decl.name),
             fromBlock(decl.structBody));
     }
 

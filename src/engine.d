@@ -2,6 +2,7 @@ module engine;
 
 import astcache;
 import dsymbols;
+import logger;
 import modulecache;
 import modulevisitor;
 import moduleparser;
@@ -29,8 +30,9 @@ public:
 
     void setSource(string fileName, string source, uint revision)
     {
+        debug trace("fileName = ", fileName);
         auto res = _astCache.getModule(fileName);
-        if (revision <= res[1])
+        if (res[0] !is null && revision == res[1])
         {
             return;
         }
@@ -41,11 +43,13 @@ public:
 
     inout(ModuleSymbol) activeModule() inout
     {
+        debug trace();
         return _activeVisitor.moduleSymbol();
     }
 
     ISymbol findSymbol(Offset pos)
     {
+        debug trace("offset = ", pos);
         return activeModule().findScope(pos);
     }
 }

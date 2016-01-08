@@ -48,6 +48,7 @@ public:
     {
         override void visit(const(T) node)
         {
+            debug trace("Visiting ", typeof(node).stringof);
             auto sym = _symbolFactory.create(node, _state);
             static if (isIterable!(typeof(sym)))
             {

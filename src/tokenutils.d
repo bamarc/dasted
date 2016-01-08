@@ -11,7 +11,7 @@ import std.algorithm;
 import std.array;
 
 
-string text(Token t)
+string txt(Token t)
 {
     return t.text.idup;
 }
@@ -21,10 +21,10 @@ Offset offset(Token t)
     return cast(Offset)t.index;
 }
 
-string[] textChain(const IdentifierChain chain)
+string[] txtChain(const IdentifierChain chain)
 {
     return chain is null ? null
-        : map!(a => text(a))(chain.identifiers).array();
+        : map!(a => txt(a))(chain.identifiers).array();
 }
 
 Offset offsetChain(const IdentifierChain chain)

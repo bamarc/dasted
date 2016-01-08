@@ -37,8 +37,7 @@ class Dasted
         socket.blocking = true;
         socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR,
                          true);
-
-//        am = new ActiveModule;
+        engine = new Engine;
     }
 
     void addImportPath(string path)
@@ -87,6 +86,7 @@ private:
 
     void processRequest(T)(const T req)
     {
+        debug trace("Request: ", req.type);
         typeof(onMessage(req)) rep;
         try
         {

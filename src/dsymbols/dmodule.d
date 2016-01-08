@@ -5,6 +5,7 @@ import dsymbols.dsymbolbase;
 import dsymbols.dfunction;
 
 import astcache;
+import logger;
 import modulecache;
 import scopemap;
 
@@ -20,6 +21,8 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
         _nameChain = name;
         _info.name = join(name, ".");
         _info.position = pos;
+
+        scopes = new ScopeMap;
     }
 
     void addScope(ISymbol s)
@@ -29,6 +32,7 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
 
     ISymbol findScope(Offset pos)
     {
+        debug trace("pos = ", pos);
         return scopes.findScope(pos);
     }
 
