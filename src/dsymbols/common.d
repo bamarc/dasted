@@ -128,6 +128,9 @@ interface ISymbol
     bool applyArguments(const DType[] tokens);
 
     string asString(uint tabs) const;
+
+    ISymbol[] children();
+    ISymbol[] injected();
 }
 
 struct DType

@@ -135,7 +135,9 @@ class ModuleCache
     string[] computeFilePaths(string moduleName) const
     {
         auto modulePath = split(moduleName, ".");
-        auto paths = array(map!(a => buildPath(a ~ modulePath) ~ ".d")(_importPaths)) ~ moduleName;
+        auto paths = array(
+            map!(a => buildPath(a ~ modulePath) ~ ".d")(_importPaths))
+            ~ moduleName;
         auto validPaths = filter!(a => exists(a) && isFile(a))(paths);
         return validPaths.array();
     }
@@ -143,11 +145,12 @@ class ModuleCache
     ModuleSymbol updateModule(string name, string fileName)
     {
         assert(!fileName.empty());
-        auto res = _astCache.getModule(fileName);
-        auto mod = res[0];
+        auto res = _astCache.getAST(fileName);
+        auto mod = res[0].getModule();
         if (mod is null)
         {
-            mod = _astCache.updateModule(fileName, readText(fileName));
+            auto ast = _astCache.updateAST(fileName, readText(fileName));
+            mod = ast.getModule();
         }
         _visitor.visitModule(mod);
         auto ms = _visitor.moduleSymbol();

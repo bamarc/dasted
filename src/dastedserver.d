@@ -101,7 +101,8 @@ private:
 
     Reply!(MT.WRONG_TYPE) onMessage(T)(const T req)
     {
-        throw new DastedException("unsupported request type (not implemented yet)");
+        throw new DastedException(
+            "unsupported request type (not implemented yet)");
     }
 
     Reply!(MT.COMPLETE) onMessage(const Request!(MT.COMPLETE) req)
@@ -117,7 +118,7 @@ private:
         const Request!(MT.FIND_DECLARATION) req)
     {
         engine.setSource("stdin", req.src, revision++);
-        return typeof(return)(toMSymbol(engine.findSymbol(req.cursor)));
+        return typeof(return)(toMSymbol(engine.findDeclaration(req.cursor)));
     }
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)

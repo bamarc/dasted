@@ -8,6 +8,11 @@ import dsymbols.common;
 import dparse.ast;
 import std.typecons;
 
+struct ASTState
+{
+
+}
+
 class ASTCache
 {
     alias CacheImpl = LRUCache!(string, ModuleParser);
@@ -18,18 +23,18 @@ class ASTCache
         _cache = new CacheImpl(8);
     }
 
-    Tuple!(Module, uint) getModule(string fileName)
+    Tuple!(ModuleAST, uint) getAST(string fileName)
     {
         auto res = _cache.get(fileName);
-        return tuple(res[0].getModule(), res[0].revision());
+        return tuple(res[0].ast(), res[0].revision());
     }
 
-    Module updateModule(string fileName, string src,
+    ModuleAST updateAST(string fileName, string src,
         uint rev = ModuleParser.NO_REVISION)
     {
         auto parser = ModuleParser(src, rev);
         _cache.set(fileName, parser);
-        return parser.getModule();
+        return parser.ast();
     }
 
 }

@@ -7,7 +7,11 @@ import modulecache;
 import modulevisitor;
 import moduleparser;
 import symbolfactory;
+import tokenutils;
 
+import std.algorithm;
+import std.range;
+import std.typecons;
 
 class Engine
 {
@@ -17,8 +21,9 @@ private:
     ModuleCache _moduleCache;
     ModuleVisitor _importVisitor;
     ModuleVisitor _activeVisitor;
-    ModuleParser* _moduleParser;
+    ModuleAST _activeAST;
 public:
+
     this()
     {
         _factory = new SymbolFactory;
@@ -31,13 +36,17 @@ public:
     void setSource(string fileName, string source, uint revision)
     {
         debug trace("fileName = ", fileName);
-        auto res = _astCache.getModule(fileName);
-        if (res[0] !is null && revision == res[1])
+        auto res = _astCache.getAST(fileName);
+        if (res[0].getModule() !is null && revision == res[1])
         {
+            _activeAST = res[0];
             return;
         }
         // TODO: set sources only, lazy parsing
-        auto mod = _astCache.updateModule(fileName, source, revision);
+        _activeAST = _astCache.updateAST(fileName, source, revision);
+        auto mod = _activeAST.getModule();
+        _activeVisitor.reset(mod);
+        _activeVisitor.moduleSymbol().setModuleCache(_moduleCache);
         _activeVisitor.visitModule(mod);
     }
 
@@ -47,9 +56,75 @@ public:
         return _activeVisitor.moduleSymbol();
     }
 
-    ISymbol findSymbol(Offset pos)
+    const(Token)[] activeTokens() const
+    {
+        return _activeAST.tokens();
+    }
+
+    ISymbol findScope(Offset pos)
     {
         debug trace("offset = ", pos);
         return activeModule().findScope(pos);
+    }
+
+    auto getBeforeTokens(Offset pos) const
+    {
+        return assumeSorted(activeTokens()).lowerBound(pos);
+    }
+
+    ISymbol findDeclaration(Offset pos)
+    {
+        debug trace("offset = ", pos);
+        auto parent = findScope(pos);
+        auto tokens = getIdentifierChain(getBeforeTokens(pos));
+        return findDeclaration(parent, tokens);
+    }
+
+    ISymbol findDeclaration(ISymbol scopeSymbol,
+        const(Token)[] identifierChain)
+    {
+        debug trace("chain = ", map!(a => txt(a))(identifierChain));
+        if (identifierChain.empty())
+        {
+            return null;
+        }
+
+        auto s = TokenStream(identifierChain);
+        if (s.curr.type == tok!".")
+        {
+            scopeSymbol = activeModule();
+            if (!s.next())
+            {
+                return null;
+            }
+        }
+        ISymbol[] candidates = scopeSymbol.findInScope(txt(s.curr), true);
+        while (s.next())
+        {
+            if (candidates.empty())
+            {
+                return null;
+            }
+            auto nextToken = identifierChain.back();
+            identifierChain.popBack();
+            if (nextToken == tok!".")
+            {
+                if (candidates.length != 1)
+                {
+                    return null;
+                }
+                candidates = candidates.front().dotAccess();
+            }
+            else if (nextToken == tok!"identifier")
+            {
+                candidates = filter!(a => a.name() == txt(nextToken))(
+                    candidates).array();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        return candidates.empty() ? null : candidates.front();
     }
 }

@@ -32,10 +32,14 @@ public:
         _mode = mode;
     }
 
-    void visitModule(const Module mod)
+    void reset(const Module mod)
     {
         _moduleSymbol = _symbolFactory.create(mod);
         _symbol = _moduleSymbol;
+    }
+
+    void visitModule(const Module mod)
+    {
         mod.accept(this);
     }
 

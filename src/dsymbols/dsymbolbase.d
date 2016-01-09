@@ -128,7 +128,8 @@ class DSymbol : ISymbol
 
     override ISymbol[] scopeAccess()
     {
-        typeof(return) res = _children ~ join(map!(a => a.dotAccess())(_injected));
+        typeof(return) res = _children
+            ~ join(map!(a => a.dotAccess())(_injected));
         if (_parent !is null)
         {
             res ~= _parent.scopeAccess();
@@ -136,19 +137,21 @@ class DSymbol : ISymbol
         return res;
     }
 
-    ISymbol[] scopeAccess(ISymbol s, string name)
+    ISymbol[] findInScope(ISymbol s, string name)
     {
-        auto res = filter!(a => a.name() == name)(_children ~ join(map!(a => a.dotAccess())(_injected))).array();
-        if (res.empty() && _parent !is null)
+        auto res = filter!(a => a.name() == name)(
+            s.children() ~ join(map!(a => a.dotAccess())(s.injected()))).array();
+        if (res.empty() && s.parent() !is null)
         {
-            return scopeAccess(_parent, name);
+            return findInScope(s.parent(), name);
         }
         return res;
     }
 
     override ISymbol[] findInScope(string name, bool exact)
     {
-        return exact ? filter!(a => a.name() == name)(scopeAccess()).array() : filter!(a => a.name().startsWith(name))(scopeAccess()).array();
+        return exact ? findInScope(this, name)
+            : filter!(a => a.name().startsWith(name))(scopeAccess()).array();
     }
 
     override bool applyTemplateArguments(const DType[] tokens)
@@ -167,6 +170,16 @@ class DSymbol : ISymbol
     }
 
     inout(ISymbol)[] injected() inout
+    {
+        return _injected;
+    }
+
+    protected override ISymbol[] children()
+    {
+        return _children;
+    }
+
+    protected override ISymbol[] injected()
     {
         return _injected;
     }
