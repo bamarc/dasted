@@ -40,6 +40,7 @@ public:
 
     void visitModule(const Module mod)
     {
+        _state.moduleSymbol = _moduleSymbol;
         mod.accept(this);
     }
 

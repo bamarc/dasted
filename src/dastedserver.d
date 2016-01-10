@@ -107,17 +107,15 @@ private:
 
     Reply!(MT.COMPLETE) onMessage(const Request!(MT.COMPLETE) req)
     {
-        return typeof(return).init;
-//        am.setSources(req.src);
-//        auto symbols = am.complete(req.cursor);
-//        auto resp_symbols = map!(a => from(a))(symbols).array();
-//        return Reply!(MessageType.COMPLETE)(false, resp_symbols);
+        engine.setSource("stdin", extractSources(req.src), revision++);
+        return typeof(return)(false,
+            map!(a => toMSymbol(a))(engine.complete(req.cursor)).array());
     }
 
     Reply!(MT.FIND_DECLARATION) onMessage(
         const Request!(MT.FIND_DECLARATION) req)
     {
-        engine.setSource("stdin", req.src, revision++);
+        engine.setSource("stdin", extractSources(req.src), revision++);
         return typeof(return)(toMSymbol(engine.findDeclaration(req.cursor)));
     }
 
@@ -225,6 +223,21 @@ private:
         s.send((cast(ubyte*) &length)[0..length.sizeof]);
         s.send(header);
         s.send(outbuffer);
+    }
+
+    string extractSources(string s)
+    {
+        if (!s.startsWith("@"))
+        {
+            return s;
+        }
+        import std.file;
+        auto fileName = s[1..$];
+        if (exists(fileName) && isFile(fileName))
+        {
+            return readText(fileName);
+        }
+        return s;
     }
 
     TcpSocket socket;

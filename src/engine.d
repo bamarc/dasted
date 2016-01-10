@@ -171,6 +171,8 @@ public:
         ISymbol[] candidates = scopeSymbol.findInScope(stxt(s.curr), isExact());
         while (s.next())
         {
+            debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr),
+                        ", candidates = ", map!(a => a.name())(candidates));
             if (candidates.empty())
             {
                 return null;

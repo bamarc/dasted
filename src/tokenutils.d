@@ -16,6 +16,11 @@ string txt(Token t)
     return t.text.idup;
 }
 
+string tokToString(IdType t)
+{
+    return str(t);
+}
+
 Offset offset(Token t)
 {
     return cast(Offset)t.index;
