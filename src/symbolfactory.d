@@ -80,7 +80,7 @@ class SymbolFactory
     VariableSymbol[] create(const VariableDeclaration decl, SymbolState state)
     {
         VariableSymbol[] res;
-        DType dtype; // TODO: load type from declaration
+        DType dtype = toDType(decl.type);
         foreach (d; decl.declarators)
         {
             res ~= new VariableSymbol(txt(d.name), offset(d.name), dtype);

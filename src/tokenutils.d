@@ -98,3 +98,51 @@ struct TokenStream
         return !_tokens.empty();
     }
 }
+
+DType toDType(const(Type) type)
+{
+    if (type is null || type.type2 is null)
+    {
+        return DType();
+    }
+    if (type.type2.builtinType != tok!"")
+    {
+        return DType(tokToString(type.type2.builtinType), true);
+    }
+    else if (type.type2.symbol !is null)
+    {
+        auto tmp = type.type2.symbol.identifierOrTemplateChain;
+        auto chain = tmp.identifiersOrTemplateInstances;
+        static string asString(const IdentifierOrTemplateInstance x)
+        {
+            if (x.templateInstance is null)
+            {
+                return x.identifier.text.idup;
+            }
+            string result = x.templateInstance.identifier.text.idup;
+            auto ta = x.templateInstance.templateArguments;
+            if (ta is null)
+            {
+                return result;
+            }
+            result ~= "!";
+            if (ta.templateArgumentList is null)
+            {
+                result ~= ta.templateSingleArgument.token.text.idup;
+            }
+            else
+            {
+                static string typeToString(const(Type) t)
+                {
+                    return toDType(t).asString();
+                }
+                result ~= (join(array(map!(a => a.type is null ?
+                    "AssignExpression" : typeToString(a.type))
+                    (ta.templateArgumentList.items)), ", "));
+            }
+            return result;
+        }
+        return DType(array(map!(a => asString(a))(chain)));
+    }
+    return DType();
+}

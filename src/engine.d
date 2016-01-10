@@ -172,14 +172,13 @@ public:
         while (s.next())
         {
             debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr),
-                        ", candidates = ", map!(a => a.name())(candidates));
+                        ": ", offset(s.curr), ", candidates = ",
+                        map!(a => debugString(a))(candidates));
             if (candidates.empty())
             {
                 return null;
             }
-            auto nextToken = identifierChain.back();
-            identifierChain.popBack();
-            if (nextToken == tok!".")
+            if (s.curr.type == tok!".")
             {
                 if (candidates.length != 1)
                 {
@@ -187,12 +186,12 @@ public:
                 }
                 candidates = candidates.front().dotAccess();
             }
-            else if (nextToken == tok!"identifier")
+            else if (s.curr.type == tok!"identifier")
             {
                 candidates = isExact() ?
-                    filter!(a => a.name() == stxt(nextToken))(
+                    filter!(a => a.name() == stxt(s.curr))(
                         candidates).array()
-                    : filter!(a => a.name().startsWith(stxt(nextToken)))(
+                    : filter!(a => a.name().startsWith(stxt(s.curr)))(
                           candidates).array();
             }
             else
