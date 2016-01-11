@@ -13,12 +13,18 @@ int main(string[] args)
     bool printVersion;
     string dmdconf;
     bool daemon;
+    string[] disableMsg;
+    string[] enableMsg;
+    string logLevel;
 
     getopt(args,
         "d|daemon", &daemon,
         "port|p", &port,
         "version", &printVersion,
-        "dmdconf", &dmdconf);
+        "dmdconf", &dmdconf,
+        "disable_msg", &disableMsg,
+        "enable_msg", &enableMsg,
+        "log_level", &logLevel);
 
     if (printVersion)
     {
@@ -33,6 +39,18 @@ int main(string[] args)
     }
 
     Dasted d = new Dasted;
+
+    d.setLogLevel(logLevel);
+
+    foreach (i; disableMsg)
+    {
+        d.toggleLogMsg(i, false);
+    }
+
+    foreach (i; enableMsg)
+    {
+        d.toggleLogMsg(i, true);
+    }
 
     if (!dmdconf.empty() && exists(dmdconf) && isFile(dmdconf))
     {

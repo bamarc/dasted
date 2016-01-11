@@ -39,6 +39,16 @@ class Dasted
                          true);
     }
 
+    void toggleLogMsg(string regexp, bool enable)
+    {
+        logger.toggleLogMsg(regexp, enable);
+    }
+
+    void setLogLevel(string lv)
+    {
+        logger.setLogLevel(lv);
+    }
+
     Engine engine(string project)
     {
         auto e = project in engines;
