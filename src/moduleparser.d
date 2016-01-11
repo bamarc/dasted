@@ -26,6 +26,7 @@ public:
     }
 }
 
+// TODO: move revision into ASTCache
 
 struct ModuleParser
 {

@@ -61,6 +61,11 @@ public:
         return _activeAST.tokens();
     }
 
+    void addImportPath(string name)
+    {
+        _moduleCache.addImportPath(name);
+    }
+
     ISymbol findScope(Offset pos)
     {
         debug trace("offset = ", pos);

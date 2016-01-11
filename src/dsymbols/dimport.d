@@ -23,6 +23,22 @@ class ImportSymbol : TypedSymbol!(SymbolType.MODULE)
         _moduleCache = s.moduleCache();
     }
 
+    override ISymbol[] dotAccess()
+    {
+        auto m = moduleSymbol();
+        return m is null ? null : m.dotAccess();
+    }
+
+    override void addToParent(ISymbol parent)
+    {
+        parent.inject(this);
+    }
+
+    ModuleSymbol moduleSymbol()
+    {
+        return _moduleCache.getModule(_name.join("."));
+    }
+
     string[] _name;
     string _rename;
 

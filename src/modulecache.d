@@ -1,10 +1,10 @@
 module modulecache;
 
-import astcache;
 import cache;
 import dsymbols.common;
 import dsymbols.dmodule;
 import logger;
+import moduleparser;
 import modulevisitor;
 
 import std.experimental.allocator;
@@ -75,18 +75,17 @@ class ModuleState
 class ModuleCache
 {
     LRUCache!(string, ModuleState) _cache;
-    ASTCache _astCache;
     ModuleVisitor _visitor;
 
     this(ModuleVisitor visitor)
     {
         _cache = new LRUCache!(string, ModuleState)(16);
-        _astCache = new ASTCache;
         _visitor = visitor;
     }
 
     void addImportPath(string path)
     {
+        debug trace("path = ", path);
         import std.algorithm, std.file;
         if (canFind(_importPaths, path))
         {
@@ -103,6 +102,7 @@ class ModuleCache
 
     ModuleSymbol getModule(string name)
     {
+        debug trace("name = ", name);
         auto res = _cache.get(name);
         string fileName;
         if (!res[1])
@@ -145,13 +145,11 @@ class ModuleCache
     ModuleSymbol updateModule(string name, string fileName)
     {
         assert(!fileName.empty());
-        auto res = _astCache.getAST(fileName);
-        auto mod = res[0].getModule();
-        if (mod is null)
-        {
-            auto ast = _astCache.updateAST(fileName, readText(fileName));
-            mod = ast.getModule();
-        }
+        auto parser = ModuleParser(readText(fileName),
+                                   ModuleParser.NO_REVISION);
+        auto mod = parser.getModule();
+        _visitor.reset(mod);
+        _visitor.moduleSymbol().setModuleCache(this);
         _visitor.visitModule(mod);
         auto ms = _visitor.moduleSymbol();
         _cache.set(name, new ModuleState(fileName, name, ms));

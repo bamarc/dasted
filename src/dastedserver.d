@@ -42,7 +42,7 @@ class Dasted
 
     void addImportPath(string path)
     {
-//        am.addImportPath(path);
+        engine.addImportPath(path);
     }
 
     void run(ushort port)
@@ -121,9 +121,11 @@ private:
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
     {
+        foreach (string path; req.paths)
+        {
+            engine.addImportPath(path);
+        }
         return typeof(return).init;
-//        foreach (string path; req.paths) am.addImportPath(path);
-//        return Reply!(MessageType.ADD_IMPORT_PATHS)();
     }
 
     Reply!(MessageType.GET_DOC) onMessage(const Request!(MessageType.GET_DOC) req)

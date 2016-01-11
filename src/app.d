@@ -58,11 +58,14 @@ int main(string[] args)
         import std.json;
         import msgpack;
         auto inputJsonString = stdin.byLine.join("\n");
-        auto j = parseJSON(inputJsonString);
-        auto type = j["type"].integer();
-        auto msg = msgpack.fromJSONValue(j["msg"]).pack();
-        auto rep = d.runOn(msg, to!MessageType(type));
-        writeln(rep.unpack().toJSONValue().toString());
+        auto inputJson = parseJSON(inputJsonString);
+        foreach (j; inputJson.array)
+        {
+            auto type = j["type"].integer();
+            auto msg = msgpack.fromJSONValue(j["msg"]).pack();
+            auto rep = d.runOn(msg, to!MessageType(type));
+            writeln(rep.unpack().toJSONValue().toString());
+        }
 
     }
     return 0;
