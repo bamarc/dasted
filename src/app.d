@@ -43,7 +43,7 @@ int main(string[] args)
         {
             foreach (m; matchAll(line, r))
             {
-                d.addImportPath(to!string(m.captures[1]));
+                d.addGlobalImportPath(to!string(m.captures[1]));
             }
         }
     }

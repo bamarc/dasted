@@ -37,12 +37,27 @@ class Dasted
         socket.blocking = true;
         socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR,
                          true);
-        engine = new Engine;
     }
 
-    void addImportPath(string path)
+    Engine engine(string project)
     {
-        engine.addImportPath(path);
+        auto e = project in engines;
+        if (e !is null)
+        {
+            return *e;
+        }
+        auto newEngine = new Engine;
+        foreach (i; globalImportPaths)
+        {
+            newEngine.addImportPath(i);
+        }
+        engines[project] = newEngine;
+        return newEngine;
+    }
+
+    void addGlobalImportPath(string path)
+    {
+        globalImportPaths ~= path;
     }
 
     void run(ushort port)
@@ -107,23 +122,27 @@ private:
 
     Reply!(MT.COMPLETE) onMessage(const Request!(MT.COMPLETE) req)
     {
-        engine.setSource("stdin", extractSources(req.src), revision++);
+        auto eng = engine(req.project);
+        eng.setSource("stdin", extractSources(req.src), revision++);
         return typeof(return)(false,
-            map!(a => toMSymbol(a))(engine.complete(req.cursor)).array());
+            map!(a => toMSymbol(a))(
+                eng.complete(req.cursor)).array());
     }
 
     Reply!(MT.FIND_DECLARATION) onMessage(
         const Request!(MT.FIND_DECLARATION) req)
     {
-        engine.setSource("stdin", extractSources(req.src), revision++);
-        return typeof(return)(toMSymbol(engine.findDeclaration(req.cursor)));
+        auto eng = engine(req.project);
+        eng.setSource("stdin", extractSources(req.src), revision++);
+        return typeof(return)(toMSymbol(eng.findDeclaration(req.cursor)));
     }
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
     {
+        auto eng = engine(req.project);
         foreach (string path; req.paths)
         {
-            engine.addImportPath(path);
+            eng.addImportPath(path);
         }
         return typeof(return).init;
     }
@@ -250,6 +269,8 @@ private:
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
 
     uint revision;
-    Engine engine;
+    // TODO: a common cache for system directories
+    Engine[string] engines;
+    string[] globalImportPaths;
 
 }

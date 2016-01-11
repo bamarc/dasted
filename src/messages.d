@@ -74,6 +74,7 @@ struct Request(MessageType T)
 struct Request(MessageType T : MessageType.COMPLETE)
 {
     enum type = T;
+    string project;
     string src;
     uint cursor;
 }
@@ -81,6 +82,7 @@ struct Request(MessageType T : MessageType.COMPLETE)
 struct Request(MessageType T : MessageType.FIND_DECLARATION)
 {
     enum type = T;
+    string project;
     string src;
     uint cursor;
 }
@@ -88,12 +90,14 @@ struct Request(MessageType T : MessageType.FIND_DECLARATION)
 struct Request(MessageType T : MessageType.ADD_IMPORT_PATHS)
 {
     enum type = T;
+    string project;
     string[] paths;
 }
 
 struct Request(MessageType T : MessageType.GET_DOC)
 {
     enum type = T;
+    string project;
     string src;
     uint cursor;
 }
@@ -101,12 +105,14 @@ struct Request(MessageType T : MessageType.GET_DOC)
 struct Request(MessageType T : MessageType.OUTLINE)
 {
     enum type = T;
+    string project;
     string src;
 }
 
 struct Request(MessageType T : MessageType.LOCAL_USAGE)
 {
     enum type = T;
+    string project;
     string src;
     uint cursor;
 }
@@ -114,6 +120,7 @@ struct Request(MessageType T : MessageType.LOCAL_USAGE)
 struct Request(MessageType T : MessageType.USAGE)
 {
     enum type = T;
+    string project;
     string src;
     uint cursor;
 }
@@ -121,12 +128,14 @@ struct Request(MessageType T : MessageType.USAGE)
 struct Request(MessageType T : MessageType.CLASS_HIERARCHY)
 {
     enum type = T;
+    string project;
     string[] filePaths;
 }
 
 struct Request(MessageType T : MessageType.SHUTDOWN)
 {
     enum type = T;
+    string project;
     bool payload;
 }
 
