@@ -28,7 +28,7 @@ auto toSymbol(T)(const T node)
         override void visit(const AnonymousEnumMember enumMem)
         {
             fromToken(enumMem.name);
-            result.type = CK.enumMember;
+            result.type = CK.ENUM_VARIABLE;
             if (enumMem.type !is null)
             {
                 auto app = appender!(char[])();
@@ -41,7 +41,7 @@ auto toSymbol(T)(const T node)
         override void visit(const ClassDeclaration classDec)
         {
             fromToken(classDec.name);
-            result.type = CK.className;
+            result.type = CK.CLASS;
             if (classDec.templateParameters !is null)
             {
                 visit(classDec.templateParameters);
@@ -51,7 +51,7 @@ auto toSymbol(T)(const T node)
         override void visit(const EnumDeclaration enumDec)
         {
             fromToken(enumDec.name);
-            result.type = CK.enumName;
+            result.type = CK.ENUM;
             if (enumDec.type !is null)
             {
                 auto app = appender!(char[])();
@@ -64,7 +64,7 @@ auto toSymbol(T)(const T node)
         override void visit(const EnumMember enumMem)
         {
             fromToken(enumMem.name);
-            result.type = CK.enumMember;
+            result.type = CK.ENUM_VARIABLE;
             if (enumMem.type !is null)
             {
                 auto app = appender!(char[])();
@@ -77,7 +77,7 @@ auto toSymbol(T)(const T node)
         override void visit(const FunctionDeclaration functionDec)
         {
             fromToken(functionDec.name);
-            result.type = CK.functionName;
+            result.type = CK.FUNCTION;
             auto app = appender!(char[])();
             if (functionDec.hasAuto)
             {
@@ -104,7 +104,7 @@ auto toSymbol(T)(const T node)
         override void visit(const InterfaceDeclaration interfaceDec)
         {
             fromToken(interfaceDec.name);
-            result.type = CK.className;
+            result.type = CK.CLASS;
             if (interfaceDec.templateParameters !is null)
             {
                 visit(interfaceDec.templateParameters);
@@ -114,7 +114,7 @@ auto toSymbol(T)(const T node)
         override void visit(const StructDeclaration structDec)
         {
             fromToken(structDec.name);
-            result.type = CK.structName;
+            result.type = CK.STRUCT;
             if (structDec.templateParameters !is null)
             {
                 visit(structDec.templateParameters);
@@ -124,7 +124,7 @@ auto toSymbol(T)(const T node)
         override void visit(const TemplateDeclaration templateDec)
         {
             fromToken(templateDec.name);
-            result.type = CK.templateName;
+            result.type = CK.TEMPLATE;
 //            templateDec.accept(this);
             if (templateDec.templateParameters !is null)
             {
@@ -138,7 +138,7 @@ auto toSymbol(T)(const T node)
             {
                 result.name = "this()";
                 result.qualifiers = ["static"];
-                result.type = CK.functionName;
+                result.type = CK.FUNCTION;
                 result.location.cursor = cast(uint)s.location;
             }
         }
@@ -149,7 +149,7 @@ auto toSymbol(T)(const T node)
             {
                 result.name = "~this()";
                 result.qualifiers = ["static"];
-                result.type = CK.functionName;
+                result.type = CK.FUNCTION;
                 result.location.cursor = cast(uint)s.location;
             }
         }
@@ -160,7 +160,7 @@ auto toSymbol(T)(const T node)
             {
                 result.name = "this()";
                 result.qualifiers = ["shared", "static"];
-                result.type = CK.functionName;
+                result.type = CK.FUNCTION;
                 result.location.cursor = cast(uint)s.location;
             }
         }
@@ -171,7 +171,7 @@ auto toSymbol(T)(const T node)
             {
                 result.name = "~this()";
                 result.qualifiers = ["shared", "static"];
-                result.type = CK.functionName;
+                result.type = CK.FUNCTION;
                 result.location.cursor = cast(uint)s.location;
             }
         }
@@ -184,14 +184,14 @@ auto toSymbol(T)(const T node)
         override void visit(const Constructor c)
         {
             result.name = "this()";
-            result.type = CK.functionName;
+            result.type = CK.FUNCTION;
             result.location.cursor = cast(uint)c.location;
         }
 
         override void visit(const Destructor c)
         {
             result.name = "~this()";
-            result.type = CK.functionName;
+            result.type = CK.FUNCTION;
             result.location.cursor = cast(uint)c.index;
         }
 
@@ -200,7 +200,7 @@ auto toSymbol(T)(const T node)
         override void visit(const UnionDeclaration unionDec)
         {
             fromToken(unionDec.name);
-            result.type = CK.unionName;
+            result.type = CK.UNION;
         }
 
     private:
@@ -217,23 +217,24 @@ auto toSymbol(T)(const T node)
     return conv.result;
 }
 
-ubyte toUbyteType(dsymbols.SymbolType s)
+messages.SymbolType toUbyteType(dsymbols.SymbolType s)
 {
+    alias S = messages.SymbolType;
     switch (s)
     {
     default:
-    case dsymbols.SymbolType.NO_TYPE:   return '?';
-    case dsymbols.SymbolType.CLASS:     return 'c';
-    case dsymbols.SymbolType.INTERFACE: return 'i';
-    case dsymbols.SymbolType.STRUCT:    return 's';
-    case dsymbols.SymbolType.UNION:     return 'u';
-    case dsymbols.SymbolType.FUNC:      return 'f';
-    case dsymbols.SymbolType.TEMPLATE:  return 't';
-    case dsymbols.SymbolType.MODULE:    return 'M';
-    case dsymbols.SymbolType.PACKAGE:   return 'P';
-    case dsymbols.SymbolType.ENUM:      return 'g';
-    case dsymbols.SymbolType.ENUM_VAR:  return 'e';
-    case dsymbols.SymbolType.VAR:       return 'v';
+    case dsymbols.SymbolType.NO_TYPE:   return S.UNKNOWN;
+    case dsymbols.SymbolType.CLASS:     return S.CLASS;
+    case dsymbols.SymbolType.INTERFACE: return S.INTERFACE;
+    case dsymbols.SymbolType.STRUCT:    return S.STRUCT;
+    case dsymbols.SymbolType.UNION:     return S.UNION;
+    case dsymbols.SymbolType.FUNC:      return S.FUNCTION;
+    case dsymbols.SymbolType.TEMPLATE:  return S.TEMPLATE;
+    case dsymbols.SymbolType.MODULE:    return S.MODULE;
+    case dsymbols.SymbolType.PACKAGE:   return S.PACKAGE;
+    case dsymbols.SymbolType.ENUM:      return S.ENUM;
+    case dsymbols.SymbolType.ENUM_VAR:  return S.ENUM_VARIABLE;
+    case dsymbols.SymbolType.VAR:       return S.VARIABLE;
     }
 }
 
@@ -255,12 +256,3 @@ MSymbol toMSymbol(const(ISymbol) symbol)
     s.typeName = symbol.type().asString();
     return s;
 }
-
-//string astString(const(ISymbol) symbol, int depth = 0)
-//{
-//    import std.range, std.algorithm, std.conv;
-//    string res = symbol.asString() ~ "\n";
-//    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ a.astString(depth + 1))(symbol.children()));
-//    res ~= join(map!(a => to!string(repeat(' ', 2 * (depth + 1))) ~ "*" ~ a.asString())(symbol.adopted()), "\n");
-//    return res;
-//}

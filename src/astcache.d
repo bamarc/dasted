@@ -8,10 +8,6 @@ import dsymbols.common;
 import dparse.ast;
 import std.typecons;
 
-struct ASTState
-{
-
-}
 
 class ASTCache
 {

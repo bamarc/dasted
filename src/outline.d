@@ -156,7 +156,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
                 }
                 s.name = d.name.text;
                 s.location.cursor = cast(uint)d.name.index;
-                s.type = CK.variableName;
+                s.type = CK.VARIABLE;
                 appendSymbol(s);
             }
         }

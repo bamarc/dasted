@@ -1,6 +1,6 @@
 module messages;
 
-enum ubyte PROTOCOL_VERSION = 3;
+enum ubyte PROTOCOL_VERSION = 4;
 
 struct Location
 {
@@ -10,74 +10,29 @@ struct Location
 
 enum SymbolType : ubyte
 {
-     /// Invalid completion kind. This is used internally and will never
-     /// be returned in a completion response.
-     dummy = '?',
-
-     /// Import symbol. This is used internally and will never
-     /// be returned in a completion response.
-     importSymbol = '*',
-
-     /// With symbol. This is used internally and will never
-     /// be returned in a completion response.
-     withSymbol = 'w',
-
-     /// class names
-     className = 'c',
-
-     /// interface names
-     interfaceName = 'i',
-
-     /// structure names
-     structName = 's',
-
-     /// union name
-     unionName = 'u',
-
-     /// variable name
-     variableName = 'v',
-
-     /// member variable
-     memberVariableName = 'm',
-
-     /// keyword, built-in version, scope statement
-     keyword = 'k',
-
-     /// function or method
-     functionName = 'f',
-
-     /// enum name
-     enumName = 'g',
-
-     /// enum member
-     enumMember = 'e',
-
-     /// package name
-     packageName = 'P',
-
-     /// module name
-     moduleName = 'M',
-
-     /// array
-     array = 'a',
-
-     /// associative array
-     assocArray = 'A',
-
-     /// alias name
-     aliasName = 'l',
-
-     /// template name
-     templateName = 't',
-
-     /// mixin template name
-     mixinTemplateName = 'T',
-
+    UNKNOWN = 0,
+    CLASS,
+    INTERFACE,
+    STRUCT,
+    UNION,
+    VARIABLE,
+    MEMBER,
+    KEYWORD,
+    FUNCTION,
+    ENUM,
+    ENUM_VARIABLE,
+    PACKAGE,
+    MODULE,
+    ARRAY,
+    ASSOCIATIVE_ARRAY,
+    ALIAS,
+    TEMPLATE,
+    MIXIN_TEMPLATE,
  }
 
 struct MSymbol
 {
-    ubyte type;
+    SymbolType type;
     Location location;
     string name;
     string typeName;
