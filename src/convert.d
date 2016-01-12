@@ -256,3 +256,18 @@ MSymbol toMSymbol(const(ISymbol) symbol)
     s.typeName = symbol.type().asString();
     return s;
 }
+
+MScope toMScope(const(ISymbol) symbol)
+{
+    MScope mscope;
+    if (symbol is null)
+    {
+        return mscope;
+    }
+    mscope.symbol = toMSymbol(symbol);
+    foreach (s; symbol.children())
+    {
+        mscope.children ~= toMScope(s);
+    }
+    return mscope;
+}

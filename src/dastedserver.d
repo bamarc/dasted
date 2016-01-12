@@ -2,7 +2,6 @@ module dastedserver;
 
 import engine;
 import messages;
-import outline;
 import logger;
 
 import std.exception;
@@ -169,10 +168,7 @@ private:
         auto eng = engine(req.project);
         eng.setSource(req.src.filename, extractSources(req.src.text),
                       req.src.revision);
-        return typeof(return).init;
-//        return typeof(return)(false,
-//            map!(a => toMSymbol(a))(
-//                eng.complete(req.cursor)).array());
+        return typeof(return)(toMScope(eng.outline()));
     }
 
     Reply!(MessageType.SHUTDOWN) onMessage(const Request!(MessageType.SHUTDOWN) req)

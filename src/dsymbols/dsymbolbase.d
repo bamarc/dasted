@@ -117,7 +117,7 @@ class DSymbol : ISymbol
     override string asString(uint tabs) const
     {
         string res;
-        foreach (const(ISymbol) c; _children) res ~= "\n" ~ c.asString(tabs + 1);
+        foreach (const(ISymbol) c; children()) res ~= "\n" ~ c.asString(tabs + 1);
         return res;
     }
 
@@ -128,8 +128,8 @@ class DSymbol : ISymbol
 
     override ISymbol[] scopeAccess()
     {
-        typeof(return) res = _children
-            ~ join(map!(a => a.dotAccess())(_injected));
+        typeof(return) res = children()
+            ~ join(map!(a => a.dotAccess())(injected()));
         if (_parent !is null)
         {
             res ~= _parent.scopeAccess();
@@ -164,22 +164,12 @@ class DSymbol : ISymbol
         return _info.parameters.length == tokens.length;
     }
 
-    inout(ISymbol)[] children() inout
+    override inout(ISymbol)[] children() inout
     {
         return _children;
     }
 
-    inout(ISymbol)[] injected() inout
-    {
-        return _injected;
-    }
-
-    protected override ISymbol[] children()
-    {
-        return _children;
-    }
-
-    protected override ISymbol[] injected()
+    override inout(ISymbol)[] injected() inout
     {
         return _injected;
     }

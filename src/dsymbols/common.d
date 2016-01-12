@@ -129,8 +129,8 @@ interface ISymbol
 
     string asString(uint tabs) const;
 
-    ISymbol[] children();
-    ISymbol[] injected();
+    inout(ISymbol)[] children() inout;
+    inout(ISymbol)[] injected() inout;
 }
 
 struct DType

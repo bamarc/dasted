@@ -206,4 +206,9 @@ public:
         }
         return candidates;
     }
+
+    ISymbol outline()
+    {
+        return activeModule();
+    }
 }
