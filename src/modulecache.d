@@ -149,6 +149,10 @@ class ModuleCache
                                    ModuleParser.NO_REVISION);
         auto mod = parser.getModule();
         _visitor.reset(mod);
+        if (_visitor.moduleSymbol().name().empty())
+        {
+            _visitor.moduleSymbol().setName(name);
+        }
         _visitor.moduleSymbol().setModuleCache(this);
         _visitor.visitModule(mod);
         auto ms = _visitor.moduleSymbol();

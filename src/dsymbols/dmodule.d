@@ -23,6 +23,15 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
         _info.position = pos;
 
         scopes = new ScopeMap;
+        debug trace("pos = ", pos, ", name = ", name);
+    }
+
+    void setName(string name)
+    {
+        debug trace("name = ", name);
+        _info.name = name;
+        _nameChain = [name];
+        _info.position = 0;
     }
 
     void addScope(ISymbol s)
@@ -41,16 +50,6 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
         return _moduleCache;
     }
 
-    inout(ASTCache) astCache() inout
-    {
-        return _astCache;
-    }
-
-    void setASTCache(ASTCache c)
-    {
-        _astCache = c;
-    }
-
     void setModuleCache(ModuleCache c)
     {
         _moduleCache = c;
@@ -59,5 +58,4 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
     string[] _nameChain;
     ScopeMap scopes;
     ModuleCache _moduleCache;
-    ASTCache _astCache;
 }

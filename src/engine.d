@@ -10,6 +10,7 @@ import symbolfactory;
 import tokenutils;
 
 import std.algorithm;
+import std.path;
 import std.range;
 import std.typecons;
 
@@ -46,6 +47,13 @@ public:
         _activeAST = _astCache.updateAST(fileName, source, revision);
         auto mod = _activeAST.getModule();
         _activeVisitor.reset(mod);
+        if (_activeVisitor.moduleSymbol().name().empty())
+        {
+            auto newModuleName = stripExtension(baseName(fileName));
+            info("Module ", fileName, " has no module declaration, ",
+                 `"`, newModuleName, `" will be used as a name.`);
+            _activeVisitor.moduleSymbol().setName(newModuleName);;
+        }
         _activeVisitor.moduleSymbol().setModuleCache(_moduleCache);
         _activeVisitor.visitModule(mod);
     }
