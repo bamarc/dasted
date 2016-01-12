@@ -8,6 +8,13 @@ struct Location
     uint cursor;
 }
 
+struct Sources
+{
+    string filename;
+    uint revision;
+    string text;
+}
+
 enum SymbolType : ubyte
 {
     UNKNOWN = 0,
@@ -75,7 +82,7 @@ struct Request(MessageType T : MessageType.COMPLETE)
 {
     enum type = T;
     string project;
-    string src;
+    Sources src;
     uint cursor;
 }
 
@@ -83,7 +90,7 @@ struct Request(MessageType T : MessageType.FIND_DECLARATION)
 {
     enum type = T;
     string project;
-    string src;
+    Sources src;
     uint cursor;
 }
 
@@ -98,7 +105,7 @@ struct Request(MessageType T : MessageType.GET_DOC)
 {
     enum type = T;
     string project;
-    string src;
+    Sources src;
     uint cursor;
 }
 
@@ -106,14 +113,14 @@ struct Request(MessageType T : MessageType.OUTLINE)
 {
     enum type = T;
     string project;
-    string src;
+    Sources src;
 }
 
 struct Request(MessageType T : MessageType.LOCAL_USAGE)
 {
     enum type = T;
     string project;
-    string src;
+    Sources src;
     uint cursor;
 }
 
@@ -121,7 +128,7 @@ struct Request(MessageType T : MessageType.USAGE)
 {
     enum type = T;
     string project;
-    string src;
+    Sources src;
     uint cursor;
 }
 

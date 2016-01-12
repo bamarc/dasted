@@ -133,7 +133,8 @@ private:
     Reply!(MT.COMPLETE) onMessage(const Request!(MT.COMPLETE) req)
     {
         auto eng = engine(req.project);
-        eng.setSource("stdin", extractSources(req.src), revision++);
+        eng.setSource(req.src.filename, extractSources(req.src.text),
+                      req.src.revision);
         return typeof(return)(false,
             map!(a => toMSymbol(a))(
                 eng.complete(req.cursor)).array());
@@ -143,7 +144,8 @@ private:
         const Request!(MT.FIND_DECLARATION) req)
     {
         auto eng = engine(req.project);
-        eng.setSource("stdin", extractSources(req.src), revision++);
+        eng.setSource(req.src.filename, extractSources(req.src.text),
+                      req.src.revision);
         return typeof(return)(toMSymbol(eng.findDeclaration(req.cursor)));
     }
 
@@ -160,15 +162,17 @@ private:
     Reply!(MessageType.GET_DOC) onMessage(const Request!(MessageType.GET_DOC) req)
     {
         return typeof(return).init;
-//        am.setSources(req.src);
-//        auto symbols = am.find(req.cursor);
-//        auto resp_symbols = map!(a => from(a))(symbols).array();
-//        return typeof(return)(resp_symbols);
     }
 
     Reply!(MessageType.OUTLINE) onMessage(const Request!(MessageType.OUTLINE) req)
     {
-        return getOutline(req);
+        auto eng = engine(req.project);
+        eng.setSource(req.src.filename, extractSources(req.src.text),
+                      req.src.revision);
+        return typeof(return).init;
+//        return typeof(return)(false,
+//            map!(a => toMSymbol(a))(
+//                eng.complete(req.cursor)).array());
     }
 
     Reply!(MessageType.SHUTDOWN) onMessage(const Request!(MessageType.SHUTDOWN) req)

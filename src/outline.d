@@ -263,7 +263,7 @@ public Reply!(MessageType.OUTLINE) getOutline(const ref Request!(MessageType.OUT
     LexerConfig config;
     config.fileName = "";
     auto cache = StringCache(StringCache.defaultBucketCount);
-    const(Token)[] tokenArray = getTokensForParser(cast(ubyte[]) request.src,
+    const(Token)[] tokenArray = getTokensForParser(cast(ubyte[]) request.src.text,
         config, &cache);
     auto allocator = scoped!(ParseAllocator)();
     auto mod = parseModule(tokenArray, "stdin", allocator, function void(a, b, c, d, e){});
