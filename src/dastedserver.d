@@ -48,6 +48,11 @@ class Dasted
         logger.setLogLevel(lv);
     }
 
+    void setErrorAsReplies(bool enable)
+    {
+        errorReplies = enable;
+    }
+
     Engine engine(string project)
     {
         auto e = project in engines;
@@ -119,6 +124,12 @@ private:
         catch (Exception ex)
         {
             error(ex.msg);
+            if (errorReplies)
+            {
+                auto errMsg = Reply!(MT.ERROR)(ex.msg);
+                packReply(errMsg);
+                return;
+            }
         }
         packReply(rep);
     }
@@ -276,6 +287,7 @@ private:
     ubyte[] inbuffer;
     ubyte[] outbuffer;
     bool isRunning = false;
+    bool errorReplies = false;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
 
     uint revision;

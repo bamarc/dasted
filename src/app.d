@@ -16,6 +16,7 @@ int main(string[] args)
     string[] disableMsg;
     string[] enableMsg;
     string logLevel;
+    bool errorsAsReplies;
 
     getopt(args,
         "d|daemon", &daemon,
@@ -24,6 +25,7 @@ int main(string[] args)
         "dmdconf", &dmdconf,
         "disable_msg", &disableMsg,
         "enable_msg", &enableMsg,
+        "errors_as_replies", &errorsAsReplies,
         "log_level", &logLevel);
 
     if (printVersion)

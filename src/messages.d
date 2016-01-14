@@ -207,3 +207,9 @@ struct Reply(MessageType T : MessageType.SHUTDOWN)
     enum type = T;
     bool payload;
 }
+
+struct Reply(MessageType T : MessageType.ERROR)
+{
+    enum type = T;
+    string description;
+}
