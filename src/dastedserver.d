@@ -116,6 +116,8 @@ private:
     void processRequest(T)(const T req)
     {
         debug trace("Request: ", req.type);
+        debug static if (__traits(compiles, req.project))
+            trace(" project ", req.project);
         typeof(onMessage(req)) rep;
         try
         {

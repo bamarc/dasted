@@ -34,6 +34,16 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
         _info.position = 0;
     }
 
+    void setFileName(string fileName)
+    {
+        _fileName = fileName;
+    }
+
+    override string fileName() const
+    {
+        return _fileName;
+    }
+
     void addScope(ISymbol s)
     {
         scopes.add(s);
@@ -55,6 +65,7 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
         _moduleCache = c;
     }
 
+    string _fileName;
     string[] _nameChain;
     ScopeMap scopes;
     ModuleCache _moduleCache;

@@ -38,7 +38,8 @@ public:
     {
         debug trace("fileName = ", fileName);
         auto res = _astCache.getAST(fileName);
-        if (res[0].getModule() !is null && revision == res[1])
+        if (res[0].getModule() !is null && revision != ModuleParser.NO_REVISION
+            && revision == res[1])
         {
             _activeAST = res[0];
             return;
@@ -55,6 +56,7 @@ public:
             _activeVisitor.moduleSymbol().setName(newModuleName);;
         }
         _activeVisitor.moduleSymbol().setModuleCache(_moduleCache);
+        _activeVisitor.moduleSymbol().setFileName(fileName);
         _activeVisitor.visitModule(mod);
     }
 
@@ -138,6 +140,7 @@ public:
                 return null;
             }
         }
+        debug trace(map!(a => debugString(a))(candidates));
         return candidates.empty() ? null : candidates.front();
     }
 
@@ -212,6 +215,7 @@ public:
                 return null;
             }
         }
+        debug trace(map!(a => debugString(a))(candidates));
         return candidates;
     }
 

@@ -129,6 +129,7 @@ class ModuleCache
                 return res[0].moduleSymbol();
             }
         }
+        debug trace("Module ", name, " is found in ", fileName);
         return updateModule(name, fileName);
     }
 
@@ -136,9 +137,16 @@ class ModuleCache
     {
         auto modulePath = split(moduleName, ".");
         auto paths = array(
-            map!(a => buildPath(a ~ modulePath) ~ ".d")(_importPaths))
+            map!(a => buildPath(a ~ modulePath))(_importPaths))
             ~ moduleName;
-        auto validPaths = filter!(a => exists(a) && isFile(a))(paths);
+        string[] modulePaths;
+        foreach (p; paths)
+        {
+            modulePaths ~= p ~ ".d";
+            modulePaths ~= p ~ ".di";
+            modulePaths ~= buildPath([p] ~ "package.d");
+        }
+        auto validPaths = filter!(a => exists(a) && isFile(a))(modulePaths);
         return validPaths.array();
     }
 
@@ -154,6 +162,7 @@ class ModuleCache
             _visitor.moduleSymbol().setName(name);
         }
         _visitor.moduleSymbol().setModuleCache(this);
+        _visitor.moduleSymbol().setFileName(fileName);
         _visitor.visitModule(mod);
         auto ms = _visitor.moduleSymbol();
         _cache.set(name, new ModuleState(fileName, name, ms));

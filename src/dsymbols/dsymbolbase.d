@@ -123,7 +123,7 @@ class DSymbol : ISymbol
 
     override ISymbol[] dotAccess()
     {
-        return _children;
+        return children();
     }
 
     override ISymbol[] scopeAccess()

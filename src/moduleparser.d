@@ -35,7 +35,7 @@ private:
     string src;
     ModuleAST _ast;
 public:
-    enum uint NO_REVISION = uint.max;
+    enum uint NO_REVISION = 0;
 
     this(string src, uint rev = NO_REVISION)
     {
