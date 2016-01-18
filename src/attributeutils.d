@@ -1,34 +1,32 @@
 module attributeutils;
 
 import dsymbols.common;
+import logger;
+
+import dparse.ast;
+
 import std.array;
 
 alias AttributeList = const(Attribute)[];
 
-struct AttributeStackGuard
-{
-    this(AttributeList* stack, AttributeList attr)
-    {
-        _attributes = stack;
-        if (!attr.empty())
-        {
-            (*_attributes) ~= attr;
-            _num = attr.length;
-        }
-    }
-
-    ~this()
-    {
-        if (_num > 0)
-        {
-            (*_attributes) = (*_attributes)[0..$ - _num];
-        }
-    }
-    typeof(AttributeList.init.length) _num;
-    AttributeList* _attributes;
-}
-
 Visibility getVisibility(Visibility viz, AttributeList attrs)
 {
-    return Visibility.PUBLIC;
+    auto result = viz;
+    while (!attrs.empty())
+    {
+        auto a = attrs.back();
+        if (a !is null)
+        {
+            switch (a.attribute.type)
+            {
+            case tok!"private": result = Visibility.PRIVATE; return result;
+            case tok!"public": result = Visibility.PUBLIC; return result;
+            case tok!"protected": result = Visibility.PROTECTED; return result;
+            case tok!"package": result = Visibility.PACKAGE; return result;
+            default: break;
+            }
+        }
+        attrs.popBack();
+    }
+    return result;
 }

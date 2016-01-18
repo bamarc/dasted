@@ -14,19 +14,28 @@ import std.algorithm;
 class ImportSymbol : TypedSymbol!(SymbolType.MODULE)
 {
     this(string[] identifiers, string name, Offset pos,
-         ModuleSymbol s)
+         ModuleSymbol s, Visibility v)
     {
         _name = identifiers;
         _rename = name;
         _info.name = name;
         _info.position = pos;
         _moduleCache = s.moduleCache();
+        _info.visibility = v;
+    }
+
+
+    @property override void visibility(Visibility)
+    {
+        return;
     }
 
     override ISymbol[] dotAccess()
     {
         auto m = moduleSymbol();
-        return m is null ? null : m.dotAccess();
+        return m is null ? null : m.dotAccess()
+            ~ filter!(a => a.visibility() == Visibility.PUBLIC)(
+            m.injected()).map!(a => a.dotAccess()).join().array();
     }
 
     override void addToParent(ISymbol parent)

@@ -29,7 +29,7 @@ public:
     {
         _factory = new SymbolFactory;
         _astCache = new ASTCache;
-        _importVisitor = new ModuleVisitor(_factory, OutlineVisible);
+        _importVisitor = new ModuleVisitor(_factory, ImportVisible);
         _activeVisitor = new ModuleVisitor(_factory, AllVisible);
         _moduleCache = new ModuleCache(_importVisitor);
     }

@@ -1,4 +1,4 @@
-module dsymbols.dvariable;
+ module dsymbols.dvariable;
 
 import dsymbols.common;
 import dsymbols.dsymbolbase;

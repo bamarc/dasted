@@ -45,7 +45,8 @@ class SymbolFactory
         return new ImportSymbol(txtChain(imp.identifierChain),
                                 txt(imp.rename),
                                 offset(imp.rename),
-                                state.moduleSymbol);
+                                state.moduleSymbol,
+                                getVisibility(Visibility.PRIVATE, state.attributes));
     }
 
     ClassSymbol create(const ClassDeclaration decl, SymbolState state)

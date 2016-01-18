@@ -19,7 +19,8 @@ enum VisibilityMode AllVisible =
     VisibilityMode(Visibility.PUBLIC, Visibility.PRIVATE,
                    Visibility.PROTECTED, Visibility.PACKAGE,
                    Visibility.INTERNAL);
-enum OutlineVisible = AllVisible & ~VisibilityMode(Visibility.INTERNAL);
+enum ImportVisible = AllVisible & ~VisibilityMode(Visibility.INTERNAL)
+                                & ~VisibilityMode(Visibility.PRIVATE);
 
 
 
@@ -36,6 +37,7 @@ public:
     {
         _moduleSymbol = _symbolFactory.create(mod);
         _symbol = _moduleSymbol;
+        pushVisibility(Visibility.PUBLIC);
     }
 
     void visitModule(const Module mod)
@@ -49,6 +51,7 @@ public:
         return _moduleSymbol;
     }
 
+    // viz - default visibility for children
     mixin template VisitNode(T, Visibility viz, bool shouldStop = false)
     {
         override void visit(const(T) node)
@@ -62,7 +65,7 @@ public:
                     return;
                 }
             }
-            auto attrViz = getVisibility(viz, _state.attributes);
+            auto attrViz = getVisibility(currentVisibility(), _state.attributes);
             if (!(_mode & attrViz))
             {
                 return;
@@ -88,10 +91,16 @@ public:
             {
                 _moduleSymbol.addScope(next_symbol);
             }
+            debug trace("AST processes ", debugString(next_symbol));
             debug (print_ast) log(repeat(' ', ast_depth++), T.stringof);
             static if (!shouldStop)
             {
-
+                if (viz == Visibility.INTERNAL && !(_mode & Visibility.INTERNAL))
+                {
+                    return;
+                }
+                pushVisibility(viz);
+                scope(exit) popVisibility();
                 auto tmp = _symbol;
                 _symbol = next_symbol;
                 node.accept(this);
@@ -110,17 +119,34 @@ public:
     mixin VisitNode!(Unittest, Visibility.INTERNAL);
     override void visit(const Declaration decl)
     {
-        AttributeStackGuard(&(_state.attributes), decl.attributes);
+        _state.attributes ~= decl.attributes;
+        scope(exit) _state.attributes = _state.attributes[0 .. $ - decl.attributes.length];
         decl.accept(this);
     }
 
 private:
-    private alias visit = ASTVisitor.visit;
+    alias visit = ASTVisitor.visit;
+
+    Visibility currentVisibility() const
+    {
+        return _vizStack.back();
+    }
+
+    void pushVisibility(Visibility v)
+    {
+        _vizStack ~= v;
+    }
+
+    void popVisibility()
+    {
+        _vizStack.popBack();
+    }
 
     debug(print_ast) int ast_depth = 0;
-    private ISymbol _symbol = null;
-    private ModuleSymbol _moduleSymbol = null;
-    private SymbolState _state;
-    private SymbolFactory _symbolFactory;
-    private VisibilityMode _mode;
+    ISymbol _symbol = null;
+    ModuleSymbol _moduleSymbol = null;
+    SymbolState _state;
+    SymbolFactory _symbolFactory;
+    Visibility[] _vizStack;
+    VisibilityMode _mode;
 }

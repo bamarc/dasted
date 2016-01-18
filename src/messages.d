@@ -35,7 +35,7 @@ enum SymbolType : ubyte
     ALIAS = 15,
     TEMPLATE = 16,
     MIXIN_TEMPLATE = 17,
- }
+}
 
 struct MSymbol
 {
