@@ -51,8 +51,17 @@ class SymbolFactory
 
     ClassSymbol create(const ClassDeclaration decl, SymbolState state)
     {
+        DType[] baseClasses;
+        if (decl.baseClassList !is null)
+        {
+            debug trace("create Class ", decl.baseClassList.items.length);
+            foreach (item; decl.baseClassList.items)
+            {
+                baseClasses ~= toDType(item.type2);
+            }
+        }
         return new ClassSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(decl.structBody));
+            fromBlock(decl.structBody), baseClasses);
     }
 
     FunctionSymbol create(const FunctionDeclaration decl, SymbolState state)

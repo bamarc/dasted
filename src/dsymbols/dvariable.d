@@ -22,27 +22,7 @@ class VariableSymbol : TypedSymbol!(SymbolType.VAR)
     override ISymbol[] dotAccess()
     {
         debug trace();
-        if (type.evaluate)
-        {
-            throw new Exception("Type evaluation not implemented.");
-        }
-
-        if (type.builtin || type.chain.empty())
-        {
-            return null;
-        }
-
-        auto declarations = parent().findInScope(type.chain.front().name, true);
-        foreach (dotType; type.chain.dropOne())
-        {
-            debug trace("declarations = ", map!(a => a.name())(declarations));
-            if (declarations.empty())
-            {
-                return null;
-            }
-            declarations = filter!(a => a.name() == dotType.name)(
-                declarations.front().dotAccess()).array();
-        }
+        auto declarations = findType(this, type);
         if (declarations.empty())
         {
             return null;

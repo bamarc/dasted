@@ -99,50 +99,65 @@ struct TokenStream
     }
 }
 
-DType toDType(const(Type) type)
+DType toDType(const(Type2) type2)
 {
-    if (type is null || type.type2 is null)
+    if (type2 is null)
     {
         return DType();
     }
-    if (type.type2.builtinType != tok!"")
+    if (type2.builtinType != tok!"")
     {
-        return DType(tokToString(type.type2.builtinType), true);
+        return DType(tokToString(type2.builtinType), true);
     }
-    else if (type.type2.symbol !is null)
+    else if (type2.symbol !is null)
     {
-        auto tmp = type.type2.symbol.identifierOrTemplateChain;
-        auto chain = tmp.identifiersOrTemplateInstances;
-        static string asString(const IdentifierOrTemplateInstance x)
+        auto tmp = type2.symbol.identifierOrTemplateChain;
+        if (tmp is null)
         {
+            return DType();
+        }
+        auto chain = tmp.identifiersOrTemplateInstances;
+        static SimpleDType asSimpleDType(const IdentifierOrTemplateInstance x)
+        {
+            if (x is null)
+            {
+                return typeof(return).init;
+            }
+            import logger;
+            debug trace("Simple ", txt(x.identifier));
             if (x.templateInstance is null)
             {
-                return x.identifier.text.idup;
+                return SimpleDType(txt(x.identifier));
             }
-            string result = x.templateInstance.identifier.text.idup;
+            auto result = SimpleDType(txt(x.templateInstance.identifier));
             auto ta = x.templateInstance.templateArguments;
             if (ta is null)
             {
                 return result;
             }
-            result ~= "!";
-            if (ta.templateArgumentList is null)
+            if (ta.templateSingleArgument !is null)
             {
-                result ~= ta.templateSingleArgument.token.text.idup;
+                result.templateArguments ~= DType(
+                    [SimpleDType(txt(ta.templateSingleArgument.token))]);
             }
-            else
+            else if (ta.templateArgumentList !is null)
             {
-                static string typeToString(const(Type) t)
-                {
-                    return toDType(t).asString();
-                }
-                result ~= (join(array(map!(a => a.type is null ?
-                    "AssignExpression" : typeToString(a.type))
-                    (ta.templateArgumentList.items)), ", "));
+                result.templateArguments =
+                    ta.templateArgumentList.items.filter!(a => a !is null)
+                    .map!(a => toDType(a.type)).array();
             }
             return result;
         }
-        return DType(array(map!(a => asString(a))(chain)));
+        return DType(chain.map!(a => asSimpleDType(a)).array());
     }
     return DType();
+}
+
+DType toDType(const(Type) type)
+{
+    if (type is null)
+    {
+        return DType();
+    }
+    return toDType(type.type2);
 }

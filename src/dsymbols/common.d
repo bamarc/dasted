@@ -3,6 +3,8 @@ module dsymbols.common;
 public import dparse.lexer;
 public import dparse.ast;
 
+import logger;
+
 import std.algorithm;
 import std.array;
 import std.typecons;
@@ -150,10 +152,9 @@ struct DType
         chain = [SimpleDType(name, builtin)];
     }
 
-    import std.range;
-    this(R)(R r) if (isInputRange!R)
+    this(SimpleDType[] types)
     {
-        chain = array(map!(a => SimpleDType(a))(r));
+        chain = types;
     }
 }
 
@@ -162,6 +163,12 @@ struct SimpleDType
     string name;
     bool builtin = false;
     DType[] templateArguments;
+
+    this(string typeName, bool builtin = false)
+    {
+        name = typeName;
+        this.builtin = builtin;
+    }
 
     bool isTemplated() const
     {
@@ -182,11 +189,44 @@ struct SimpleDType
 
 }
 
+ISymbol[] findType(ISymbol symbol, const(DType) type)
+{
+    import std.range;
+    if (type.evaluate)
+    {
+        throw new Exception("Type evaluation not implemented.");
+    }
+
+    if (type.builtin || type.chain.empty())
+    {
+        return null;
+    }
+
+    auto declarations = symbol.parent().findInScope(type.chain.front().name, true);
+    foreach (dotType; type.chain.dropOne())
+    {
+        debug trace("declarations = ", map!(a => a.name())(declarations));
+        if (declarations.empty())
+        {
+            return null;
+        }
+        declarations = filter!(a => a.name() == dotType.name)(
+            declarations.front().dotAccess()).array();
+    }
+    debug trace("Declaration = ", declarations.empty() ? "NO" : debugString(declarations.front()),
+        " found for ", debugString(type));
+    return declarations;
+}
 
 string debugString(const(ISymbol) s)
 {
     import std.conv;
     return s.name() ~ " <" ~ to!string(s.symbolType()) ~ ">";
+}
+
+string debugString(const(DType) t)
+{
+    return t.asString();
 }
 
 

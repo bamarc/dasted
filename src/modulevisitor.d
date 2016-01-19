@@ -42,8 +42,10 @@ public:
 
     void visitModule(const Module mod)
     {
+        debug trace("Start visiting");
         _state.moduleSymbol = _moduleSymbol;
         mod.accept(this);
+        debug trace("Stop visiting");
     }
 
     inout(ModuleSymbol) moduleSymbol() inout
