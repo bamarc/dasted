@@ -229,4 +229,29 @@ string debugString(const(DType) t)
     return t.asString();
 }
 
+struct SafeNull(T)
+{
+    private T payload;
+    this(T p)
+    {
+        payload = p;
+    }
+
+    @property inout(T) get() inout
+    {
+        return payload;
+    }
+
+    @property auto opDispatch(string s)()
+    {
+            alias memType = SafeNull!(typeof(mixin("this.payload." ~ s)));
+            return this.payload is null ? memType.init : memType(mixin("this.payload." ~ s));
+    }
+}
+
+auto safeNull(T)(T a)
+{
+    return SafeNull!(T)(a);
+}
+
 

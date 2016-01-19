@@ -68,15 +68,7 @@ class SymbolFactory
     {
         import std.typecons;
         Rebindable!(const(BlockStatement)) st;
-        if (decl.functionBody !is null)
-        {
-
-            st = decl.functionBody.blockStatement;
-            if (st is null)
-            {
-                st = decl.functionBody.bodyStatement.blockStatement;
-            }
-        }
+        st = safeNull(decl).functionBody.bodyStatement.blockStatement.get;
         return new FunctionSymbol(txt(decl.name), offset(decl.name),
             fromBlock(st.get));
     }
