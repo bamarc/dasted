@@ -76,7 +76,7 @@ class SymbolFactory
     StructSymbol create(const StructDeclaration decl, SymbolState state)
     {
         return new StructSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(decl.structBody));
+            fromBlock(safeNull(decl).structBody));
     }
 
     VariableSymbol[] create(const VariableDeclaration decl, SymbolState state)
@@ -93,11 +93,11 @@ class SymbolFactory
     UnionSymbol create(const UnionDeclaration decl, SymbolState state)
     {
         return new UnionSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(decl.structBody));
+            fromBlock(safeNull(decl).structBody));
     }
 
     DBlock create(const Unittest test, SymbolState state)
     {
-        return new DBlock(fromBlock(test.blockStatement));
+        return new DBlock(fromBlock(safeNull(test).blockStatement));
     }
 }
