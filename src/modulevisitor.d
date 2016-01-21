@@ -118,6 +118,8 @@ public:
     mixin VisitNode!(FunctionDeclaration, Visibility.INTERNAL);
     mixin VisitNode!(UnionDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(ImportDeclaration, Visibility.PUBLIC, true);
+    mixin VisitNode!(EnumDeclaration, Visibility.PUBLIC);
+    mixin VisitNode!(EnumMember, Visibility.INTERNAL, true);
     mixin VisitNode!(Unittest, Visibility.INTERNAL);
     override void visit(const Declaration decl)
     {

@@ -34,8 +34,9 @@ class VariableSymbol : TypedSymbol!(SymbolType.VAR)
 
 class EnumVariableSymbol : TypedSymbol!(SymbolType.ENUM)
 {
-    this(string name)
+    this(string name, Offset pos)
     {
        _info.name = name;
+       _info.position = pos;
     }
 }

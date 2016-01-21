@@ -28,7 +28,7 @@ Offset offset(Token t)
 
 string[] txtChain(const IdentifierChain chain)
 {
-    return chain is null ? null
+    return chain is null ? []
         : map!(a => txt(a))(chain.identifiers).array();
 }
 
@@ -44,7 +44,7 @@ string joinChain(string[] chain)
 }
 
 ScopeBlock fromBlock(Block)(const Block bs)
-    if (is(Block == BlockStatement) || is(Block == StructBody))
+    if (is(Block == BlockStatement) || is(Block == StructBody) || is(Block == EnumBody))
 {
     return bs is null ? ScopeBlock()
         : ScopeBlock(cast(Offset)bs.startLocation,
@@ -55,7 +55,8 @@ const(Token)[] getIdentifierChain(R)(R range)
 {
     bool eligible(const(Token) t)
     {
-        return t.type == tok!"identifier" || t.type == tok!".";
+        return t.type == tok!"identifier" || t.type == tok!"."
+            || t.type == tok!"this";
     }
     typeof(return) res;
     while (!range.empty() && eligible(range.back()))

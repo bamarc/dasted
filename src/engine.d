@@ -62,7 +62,8 @@ public:
 
     inout(ModuleSymbol) activeModule() inout
     {
-        debug trace();
+        debug trace("activeModule ", _activeVisitor.moduleSymbol() is null);
+        debug trace("activeModule ", _activeVisitor.moduleSymbol().name());
         return _activeVisitor.moduleSymbol();
     }
 
@@ -113,7 +114,7 @@ public:
                 return null;
             }
         }
-        ISymbol[] candidates = scopeSymbol.findInScope(txt(s.curr), true);
+        ISymbol[] candidates = scopeSymbol.findSymbol(txt(s.curr));
         while (s.next())
         {
             if (candidates.empty())
@@ -152,6 +153,12 @@ public:
         return complete(parent, tokens, pos);
     }
 
+    /// Basic filtering, can be easily improved
+    ISymbol[] filtering(R)(R range, string substring)
+    {
+        return range.filter!(a => a.name().startsWith(substring)).array;
+    }
+
     ISymbol[] complete(ISymbol scopeSymbol,
         const(Token)[] identifierChain, Offset limit)
     {
@@ -184,7 +191,11 @@ public:
                 return null;
             }
         }
-        ISymbol[] candidates = scopeSymbol.findInScope(stxt(s.curr), isExact());
+        auto firstSymbText = s.curr.type == tok!"identifier" ? stxt(s.curr)
+                                                             : tokToString(s.curr.type);
+        debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr), ": ", offset(s.curr));
+        ISymbol[] candidates = isExact() ? scopeSymbol.findSymbol(firstSymbText)
+                                         : filtering(scopeSymbol.scopeAccess(), firstSymbText);
         while (s.next())
         {
             debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr),
@@ -207,8 +218,7 @@ public:
                 candidates = isExact() ?
                     filter!(a => a.name() == stxt(s.curr))(
                         candidates).array()
-                    : filter!(a => a.name().startsWith(stxt(s.curr)))(
-                          candidates).array();
+                    : filtering(candidates, stxt(s.curr));
             }
             else
             {

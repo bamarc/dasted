@@ -78,18 +78,17 @@ class DSymbol : ISymbol
         return _info.scopeBlock;
     }
 
-    void addToParent(ISymbol parent)
+    override void addToParent(ISymbol parent)
     {
         parent.add(this);
     }
 
-    @property override void parent(ISymbol p)
+    override void setParentSymbol(ISymbol p)
     {
         _parent = p;
-        addToParent(_parent);
     }
 
-    @property override inout(ISymbol) parent() inout
+    @property inout(ISymbol) getParent() inout
     {
         return _parent;
     }
@@ -126,32 +125,34 @@ class DSymbol : ISymbol
         return children();
     }
 
+    ISymbol[] currentScopeSymbols()
+    {
+        return children() ~ injected().map!(a => a.dotAccess()).join;
+    }
+
     override ISymbol[] scopeAccess()
     {
-        typeof(return) res = children()
-            ~ join(map!(a => a.dotAccess())(injected()));
-        if (_parent !is null)
+        auto res = currentScopeSymbols();
+        if (parent() !is null)
         {
-            res ~= _parent.scopeAccess();
+            res ~= parent().scopeAccess();
         }
         return res;
     }
 
-    ISymbol[] findInScope(ISymbol s, string name)
+    ISymbol[] findSymbolsInScope(string name)
     {
-        auto res = filter!(a => a.name() == name)(
-            s.children() ~ join(map!(a => a.dotAccess())(s.injected()))).array();
-        if (res.empty() && s.parent() !is null)
-        {
-            return findInScope(s.parent(), name);
-        }
-        return res;
+        return currentScopeSymbols.filter!(a => a.name() == name).array;
     }
 
-    override ISymbol[] findInScope(string name, bool exact)
+    override ISymbol[] findSymbol(string name)
     {
-        return exact ? findInScope(this, name)
-            : filter!(a => a.name().startsWith(name))(scopeAccess()).array();
+        auto res = findSymbolsInScope(name);
+        if (res.empty() && parent() !is null)
+        {
+            return parent().findSymbol(name);
+        }
+        return res.array;
     }
 
     override bool applyTemplateArguments(const DType[] tokens)

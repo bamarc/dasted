@@ -22,20 +22,21 @@ class SymbolFactory
     ModuleSymbol create(const Module mod)
     {
         debug trace();
-        string[] name = mod.moduleDeclaration is null ?
-            null : txtChain(mod.moduleDeclaration.moduleName);
-        Offset offset = mod.moduleDeclaration is null ?
-            BadOffset : offsetChain(mod.moduleDeclaration.moduleName);
+        string[] name = txtChain(safeNull(mod).moduleDeclaration.moduleName.get);
+        Offset offset = offsetChain(safeNull(mod).moduleDeclaration.moduleName.get);
 
         return new ModuleSymbol(name, offset);
     }
 
-    ImportSymbol[] create(const ImportDeclaration decl, SymbolState attrs)
+    ImportSymbol[] create(const ImportDeclaration decl, SymbolState state)
     {
         ImportSymbol[] res;
         foreach (imp; decl.singleImports)
         {
-            res ~= create(imp, attrs);
+            if (imp !is null)
+            {
+                res ~= create(imp, state);
+            }
         }
         return res;
     }
@@ -57,11 +58,11 @@ class SymbolFactory
             debug trace("create Class ", decl.baseClassList.items.length);
             foreach (item; decl.baseClassList.items)
             {
-                baseClasses ~= toDType(item.type2);
+                baseClasses ~= toDType(safeNull(item).type2.get);
             }
         }
         return new ClassSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(decl.structBody), baseClasses);
+            fromBlock(safeNull(decl).structBody.get), baseClasses);
     }
 
     FunctionSymbol create(const FunctionDeclaration decl, SymbolState state)
@@ -76,7 +77,7 @@ class SymbolFactory
     StructSymbol create(const StructDeclaration decl, SymbolState state)
     {
         return new StructSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(safeNull(decl).structBody));
+            fromBlock(safeNull(decl).structBody.get));
     }
 
     VariableSymbol[] create(const VariableDeclaration decl, SymbolState state)
@@ -93,11 +94,22 @@ class SymbolFactory
     UnionSymbol create(const UnionDeclaration decl, SymbolState state)
     {
         return new UnionSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(safeNull(decl).structBody));
+            fromBlock(safeNull(decl).structBody.get));
+    }
+
+    EnumSymbol create(const EnumDeclaration decl, SymbolState state)
+    {
+        return new EnumSymbol(txt(decl.name), offset(decl.name),
+            fromBlock(safeNull(decl).enumBody.get));
+    }
+
+    EnumVariableSymbol create(const EnumMember mem, SymbolState state)
+    {
+        return new EnumVariableSymbol(txt(mem.name), offset(mem.name));
     }
 
     DBlock create(const Unittest test, SymbolState state)
     {
-        return new DBlock(fromBlock(safeNull(test).blockStatement));
+        return new DBlock(fromBlock(safeNull(test).blockStatement.get));
     }
 }

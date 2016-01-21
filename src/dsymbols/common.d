@@ -114,8 +114,18 @@ interface ISymbol
         return scopeBlock().isValid();
     }
 
-    @property inout(ISymbol) parent() inout;
-    @property void parent(ISymbol p);
+    @property final inout(ISymbol) parent() inout
+    {
+        return getParent();
+    }
+    @property final void parent(ISymbol p)
+    {
+        setParentSymbol(p);
+        addToParent(p);
+    }
+    void setParentSymbol(ISymbol p);
+    void addToParent(ISymbol p);
+    inout(ISymbol) getParent() inout;
     @property Visibility visibility() const;
     @property void visibility(Visibility v);
 
@@ -123,7 +133,7 @@ interface ISymbol
     void inject(ISymbol s);
 
     ISymbol[] dotAccess();
-    ISymbol[] findInScope(string name, bool exactMatch);
+    ISymbol[] findSymbol(string name);
     ISymbol[] scopeAccess();
 
     bool applyTemplateArguments(const DType[] tokens);
@@ -202,7 +212,7 @@ ISymbol[] findType(ISymbol symbol, const(DType) type)
         return null;
     }
 
-    auto declarations = symbol.parent().findInScope(type.chain.front().name, true);
+    auto declarations = symbol.parent().findSymbol(type.chain.front().name);
     foreach (dotType; type.chain.dropOne())
     {
         debug trace("declarations = ", map!(a => a.name())(declarations));
