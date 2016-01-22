@@ -2,10 +2,12 @@ module tokenutils;
 
 import dsymbols.common;
 
-public import dparse.ast;
+import dparse.ast;
 
 import dparse.lexer;
 import dparse.parser;
+
+import logger;
 
 import std.algorithm;
 import std.array;
@@ -150,6 +152,10 @@ DType toDType(const(Type2) type2)
             return result;
         }
         return DType(chain.map!(a => asSimpleDType(a)).array());
+    }
+    else if (type2.type !is null)
+    {
+        return toDType(type2.type);
     }
     return DType();
 }

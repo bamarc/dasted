@@ -12,6 +12,7 @@ import dparse.parser;
 import std.algorithm;
 import std.array;
 import std.experimental.allocator;
+import std.typecons;
 
 struct SymbolState
 {
@@ -80,7 +81,7 @@ class SymbolFactory
 
     FunctionSymbol create(const FunctionDeclaration decl, SymbolState state)
     {
-        import std.typecons;
+        debug trace("New Function ", txt(decl.name));
         Rebindable!(const(BlockStatement)) st;
 
         st = safeNull(decl).functionBody.blockStatement.get;

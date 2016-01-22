@@ -204,7 +204,8 @@ ISymbol[] findType(ISymbol symbol, const(DType) type)
     import std.range;
     if (type.evaluate)
     {
-        throw new Exception("Type evaluation not implemented.");
+        debug trace("Type evaluation not implemented for ", debugString(type));
+        return null;
     }
 
     if (type.builtin || type.chain.empty())
@@ -231,7 +232,9 @@ ISymbol[] findType(ISymbol symbol, const(DType) type)
 string debugString(const(ISymbol) s)
 {
     import std.conv;
-    return s.name() ~ " <" ~ to!string(s.symbolType()) ~ ">";
+    return s.name() ~ " <" ~ to!string(s.symbolType()) ~ ">  ("
+                    ~ debugString(s.type()) ~ ") "
+                    ~ s.fileName() ~ ":" ~ to!string(s.position);
 }
 
 string debugString(const(DType) t)
