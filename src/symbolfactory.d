@@ -93,6 +93,17 @@ class SymbolFactory
             fromBlock(st.get), toDType(decl.returnType), toVariableList(decl.parameters));
     }
 
+    ConstructorSymbol create(const Constructor decl, SymbolState state)
+    {
+        return new ConstructorSymbol(cast(Offset)decl.location, fromFunctionBody(decl.functionBody),
+                                     toVariableList(decl.parameters));
+    }
+
+    DestructorSymbol create(const Destructor decl, SymbolState state)
+    {
+        return new DestructorSymbol(cast(Offset)decl.index, fromFunctionBody(decl.functionBody));
+    }
+
     StructSymbol create(const StructDeclaration decl, SymbolState state)
     {
         return new StructSymbol(txt(decl.name), offset(decl.name),

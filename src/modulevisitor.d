@@ -116,6 +116,8 @@ public:
     mixin VisitNode!(StructDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(VariableDeclaration, Visibility.PUBLIC, true);
     mixin VisitNode!(FunctionDeclaration, Visibility.INTERNAL);
+    mixin VisitNode!(Constructor, Visibility.INTERNAL);
+    mixin VisitNode!(Destructor, Visibility.INTERNAL);
     mixin VisitNode!(UnionDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(ImportDeclaration, Visibility.PUBLIC, true);
     mixin VisitNode!(EnumDeclaration, Visibility.PUBLIC);

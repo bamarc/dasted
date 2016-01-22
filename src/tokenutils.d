@@ -53,6 +53,24 @@ ScopeBlock fromBlock(Block)(const Block bs)
         cast(Offset)bs.endLocation);
 }
 
+ScopeBlock fromFunctionBody(const FunctionBody fb)
+{
+    import std.typecons;
+    Rebindable!(const(BlockStatement)) st;
+
+    if (fb is null)
+    {
+        return ScopeBlock.init;
+    }
+
+    st = safeNull(fb).blockStatement.get;
+    if (st.get is null)
+    {
+        st = safeNull(fb).bodyStatement.blockStatement.get;
+    }
+    return fromBlock(st.get);
+}
+
 const(Token)[] getIdentifierChain(R)(R range)
 {
     bool eligible(const(Token) t)

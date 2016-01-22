@@ -34,3 +34,24 @@ class FunctionSymbol : TypedSymbol!(SymbolType.FUNC)
     VariableSymbol[] _args;
     DType _returnType;
 }
+
+class ConstructorSymbol : FunctionSymbol
+{
+    this(Offset pos, ScopeBlock block, VariableSymbol[] args)
+    {
+        super("this", pos, block, DType.init, args);
+    }
+
+    override void addToParent(ISymbol)
+    {
+
+    }
+}
+
+class DestructorSymbol : FunctionSymbol
+{
+    this(Offset pos, ScopeBlock block)
+    {
+        super("~this", pos, block, DType.init, null);
+    }
+}
