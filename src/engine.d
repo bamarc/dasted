@@ -162,7 +162,8 @@ public:
     ISymbol[] complete(ISymbol scopeSymbol,
         const(Token)[] identifierChain, Offset limit)
     {
-        debug trace("chain = ", map!(a => txt(a))(identifierChain));
+        debug trace("chain = ", map!(a => txt(a))(identifierChain),
+                    " scope = ", debugString(scopeSymbol));
         if (identifierChain.empty())
         {
             return null;

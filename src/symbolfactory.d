@@ -9,12 +9,25 @@ import dparse.ast;
 import dparse.lexer;
 import dparse.parser;
 
+import std.algorithm;
+import std.array;
 import std.experimental.allocator;
 
 struct SymbolState
 {
     ModuleSymbol moduleSymbol;
     AttributeList attributes;
+}
+
+private VariableSymbol[] toVariableList(const(Parameters) params)
+{
+    if (params is null)
+    {
+        return null;
+    }
+
+    return params.parameters.map!(a => new VariableSymbol(txt(a.name), offset(a.name),
+                                                          toDType(a.type))).array;
 }
 
 class SymbolFactory
@@ -69,9 +82,14 @@ class SymbolFactory
     {
         import std.typecons;
         Rebindable!(const(BlockStatement)) st;
-        st = safeNull(decl).functionBody.bodyStatement.blockStatement.get;
+
+        st = safeNull(decl).functionBody.blockStatement.get;
+        if (st.get is null)
+        {
+            st = safeNull(decl).functionBody.bodyStatement.blockStatement.get;
+        }
         return new FunctionSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(st.get));
+            fromBlock(st.get), toDType(decl.returnType), toVariableList(decl.parameters));
     }
 
     StructSymbol create(const StructDeclaration decl, SymbolState state)
