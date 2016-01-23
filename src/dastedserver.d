@@ -223,6 +223,7 @@ private:
 
     void process(Socket s)
     {
+        import core.memory : GC;
         receive(s);
 
         enforce(inbuffer.length > uint.sizeof + ubyte.sizeof + ubyte.sizeof, "message is too small");
@@ -232,6 +233,7 @@ private:
 
         process(inbuffer[(uint.sizeof + type.sizeof + ubyte.sizeof)..$], type);
         send(s);
+        GC.collect();
     }
 
     void packReply(T)(const ref T rep)
