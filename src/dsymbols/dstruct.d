@@ -2,6 +2,7 @@ module dsymbols.dstruct;
 
 import dsymbols.common;
 import dsymbols.dsymbolbase;
+import dsymbols.dthis;
 
 import std.algorithm;
 import std.array;
@@ -14,5 +15,14 @@ class StructSymbol : TypedSymbol!(SymbolType.STRUCT)
         _info.name = name;
         _info.position = pos;
         _info.scopeBlock = block;
+
+        _thisSymbol = new ThisSymbol(this);
     }
+
+    override ISymbol[] currentScopeSymbols()
+    {
+        return super.currentScopeSymbols() ~ _thisSymbol;
+    }
+
+    ThisSymbol _thisSymbol;
 }
