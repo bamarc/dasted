@@ -64,19 +64,29 @@ class SymbolFactory
                                 getVisibility(Visibility.PRIVATE, state.attributes));
     }
 
-    ClassSymbol create(const ClassDeclaration decl, SymbolState state)
+    auto createClassOrInterface(R, T)(const T decl, SymbolState state)
     {
+        alias ResultType = R;
         DType[] baseClasses;
         if (decl.baseClassList !is null)
         {
-            debug trace("create Class ", decl.baseClassList.items.length);
             foreach (item; decl.baseClassList.items)
             {
                 baseClasses ~= toDType(safeNull(item).type2.get);
             }
         }
-        return new ClassSymbol(txt(decl.name), offset(decl.name),
+        return new ResultType(txt(decl.name), offset(decl.name),
             fromBlock(safeNull(decl).structBody.get), baseClasses);
+    }
+
+    ClassSymbol create(const ClassDeclaration decl, SymbolState state)
+    {
+        return createClassOrInterface!(ClassSymbol)(decl, state);
+    }
+
+    InterfaceSymbol create(const InterfaceDeclaration decl, SymbolState state)
+    {
+        return createClassOrInterface!(InterfaceSymbol)(decl, state);
     }
 
     FunctionSymbol create(const FunctionDeclaration decl, SymbolState state)

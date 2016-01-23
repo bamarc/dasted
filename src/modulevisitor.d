@@ -114,6 +114,7 @@ public:
 
     mixin VisitNode!(ClassDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(StructDeclaration, Visibility.PUBLIC);
+    mixin VisitNode!(InterfaceDeclaration, Visibility.PUBLIC);
     mixin VisitNode!(VariableDeclaration, Visibility.PUBLIC, true);
     mixin VisitNode!(FunctionDeclaration, Visibility.INTERNAL);
     mixin VisitNode!(Constructor, Visibility.INTERNAL);
