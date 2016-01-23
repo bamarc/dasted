@@ -70,6 +70,11 @@ class ModuleState
     {
         return getModificationTime() > _modTime;
     }
+
+    void spoil()
+    {
+        _modTime = SysTime(0);
+    }
 }
 
 class ModuleCache
@@ -80,6 +85,9 @@ class ModuleCache
     this(ModuleVisitor visitor)
     {
         _cache = new LRUCache!(string, ModuleState)(16);
+        debug _cache.setDeleter((string name, ModuleState state) {
+            trace("Module ", name, " removed from cache (", state.fileName(), ")");
+        });
         _visitor = visitor;
     }
 
@@ -100,9 +108,18 @@ class ModuleCache
         _importPaths = path ~ _importPaths;
     }
 
+    void spoilModule(string name)
+    {
+        auto res = _cache.get(name);
+        if (res[1])
+        {
+            res[0].spoil();
+        }
+    }
+
     ModuleSymbol getModule(string name)
     {
-        debug trace("name = ", name);
+        debug trace("name = ", name, " cache.length = ", _cache.length);
         auto res = _cache.get(name);
         string fileName;
         if (!res[1])
