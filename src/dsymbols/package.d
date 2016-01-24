@@ -1,6 +1,7 @@
 module dsymbols;
 
 public import dsymbols.common;
+public import dsymbols.dalias;
 public import dsymbols.dblock;
 public import dsymbols.dclass;
 public import dsymbols.denum;

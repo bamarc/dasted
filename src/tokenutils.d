@@ -186,3 +186,10 @@ DType toDType(const(Type) type)
     }
     return toDType(type.type2);
 }
+
+auto debugString(T)(const(T) node)
+    if (is(T : ASTNode))
+{
+    import msgpack;
+    return node.pack!true().unpack().toJSONValue().toString();
+}

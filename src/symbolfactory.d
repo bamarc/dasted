@@ -152,4 +152,17 @@ class SymbolFactory
     {
         return new DBlock(fromBlock(safeNull(test).blockStatement.get));
     }
+
+    AliasSymbol create(const AliasDeclaration decl, SymbolState state)
+    {
+//        debug trace("Alias: ", debugString(decl));
+        if (decl.initializers.empty())
+        {
+            return new AliasSymbol("", 0, toDType(decl.type),
+                safeNull(decl).identifierList.identifiers.get.map!(a => txt(a)).array);
+        }
+        return new AliasSymbol(txt(decl.initializers.front().name),
+            offset(decl.initializers.front().name), toDType(decl.initializers.front().type),
+            safeNull(decl).identifierList.identifiers.get.map!(a => txt(a)).array);
+    }
 }
