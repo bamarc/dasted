@@ -14,9 +14,13 @@ import std.array;
 import std.experimental.allocator;
 import std.typecons;
 
+alias Packages = PackageSymbol[];
+
 struct SymbolState
 {
     ModuleSymbol moduleSymbol;
+    ISymbol parent;
+    Packages[ISymbol] packages;
     AttributeList attributes;
 }
 
@@ -42,9 +46,9 @@ class SymbolFactory
         return new ModuleSymbol(name, offset);
     }
 
-    ImportSymbol[] create(const ImportDeclaration decl, SymbolState state)
+    auto create(const ImportDeclaration decl, ref SymbolState state)
     {
-        ImportSymbol[] res;
+        ISymbol[] res;
         foreach (imp; decl.singleImports)
         {
             if (imp !is null)
@@ -55,13 +59,32 @@ class SymbolFactory
         return res;
     }
 
-    ImportSymbol create(const SingleImport imp, SymbolState state)
+    ImportSymbol create(const SingleImport imp, ref SymbolState state)
     {
-        return new ImportSymbol(txtChain(imp.identifierChain),
-                                txt(imp.rename),
-                                offset(imp.rename),
-                                state.moduleSymbol,
-                                getVisibility(Visibility.PRIVATE, state.attributes));
+        auto impSymbol = new ImportSymbol(txtChain(imp.identifierChain),
+                                          txt(imp.rename),
+                                          offset(imp.rename),
+                                          state.moduleSymbol,
+                                          getVisibility(Visibility.PRIVATE, state.attributes));
+
+        if (imp.identifierChain !is null && imp.identifierChain.identifiers.length > 1)
+        {
+            auto names = imp.identifierChain.identifiers[0 .. $ - 1];
+            debug trace("Import packages ", names);
+            auto pkg = new PackageSymbol(txt(names.front()));
+            auto currPkg = pkg;
+            names.popFront();
+            while (!names.empty())
+            {
+                auto newPkg = new PackageSymbol(txt(names.front()));
+                currPkg.addPackage(newPkg);
+                currPkg = newPkg;
+                names.popFront();
+            }
+            currPkg.addImport(impSymbol);
+            state.packages[state.parent] ~= pkg;
+        }
+        return impSymbol;
     }
 
     auto createClassOrInterface(R, T)(const T decl, SymbolState state)

@@ -37,7 +37,21 @@ public:
     {
         _moduleSymbol = _symbolFactory.create(mod);
         _symbol = _moduleSymbol;
+        _state.parent = _symbol;
         pushVisibility(Visibility.PUBLIC);
+    }
+
+    void mergePackageSymbols()
+    {
+        debug trace("PKG ", _state.packages.byValue().join.map!(a => debugString(a)));
+        foreach (sym, pkgs; _state.packages)
+        {
+            debug trace("Merge packages: ", pkgs.map!(a => a.name()));
+            foreach (pkg; pkgs)
+            {
+                sym.add(pkg);
+            }
+        }
     }
 
     void visitModule(const Module mod)
@@ -105,7 +119,9 @@ public:
                 scope(exit) popVisibility();
                 auto tmp = _symbol;
                 _symbol = next_symbol;
+                _state.parent = _symbol;
                 node.accept(this);
+                _state.parent = tmp;
                 _symbol = tmp;
             }
             debug (print_ast) --ast_depth;
