@@ -38,6 +38,7 @@ public:
         _moduleSymbol = _symbolFactory.create(mod);
         _symbol = _moduleSymbol;
         _state.parent = _symbol;
+        _state.packages = _state.packages.init;
         pushVisibility(Visibility.PUBLIC);
     }
 
@@ -46,10 +47,9 @@ public:
         debug trace("PKG ", _state.packages.byValue().join.map!(a => debugString(a)));
         foreach (sym, pkgs; _state.packages)
         {
-            debug trace("Merge packages: ", pkgs.map!(a => a.name()));
             foreach (pkg; pkgs)
             {
-                sym.add(pkg);
+                pkg.parent = sym;
             }
         }
     }
@@ -119,7 +119,7 @@ public:
                 scope(exit) popVisibility();
                 auto tmp = _symbol;
                 _symbol = next_symbol;
-                _state.parent = _symbol;
+                _state.parent = next_symbol;
                 node.accept(this);
                 _state.parent = tmp;
                 _symbol = tmp;

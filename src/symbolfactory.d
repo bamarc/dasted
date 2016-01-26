@@ -81,8 +81,11 @@ class SymbolFactory
                 currPkg = newPkg;
                 names.popFront();
             }
+//            std.
             currPkg.addImport(impSymbol);
-            state.packages[state.parent] ~= pkg;
+            auto packageList = state.parent in state.packages;
+            auto list = packageList is null ? [] : *packageList;
+            state.packages[state.parent] = mergeWithPackageList(pkg, list);
         }
         return impSymbol;
     }
@@ -147,11 +150,48 @@ class SymbolFactory
     {
         VariableSymbol[] res;
         DType dtype = toDType(decl.type);
+        if (decl.autoDeclaration !is null)
+        {
+            return create(decl.autoDeclaration, state);
+        }
+        debug trace("Variable with type ", debugString(dtype));
         foreach (d; decl.declarators)
         {
             res ~= new VariableSymbol(txt(d.name), offset(d.name), dtype);
         }
         return res;
+    }
+
+    VariableSymbol[] create(const AutoDeclaration decl, SymbolState state)
+    {
+        VariableSymbol[] res;
+        foreach (i; 0 .. min(decl.identifiers.length, decl.initializers.length))
+        {
+            if (decl.initializers[i] !is null)
+            {
+                res ~= create(decl.identifiers[i], decl.initializers[i], state);
+            }
+        }
+        return res;
+    }
+
+    VariableSymbol create(const Token token, const Initializer initializer, SymbolState state)
+    {
+        auto nvi = initializer.nonVoidInitializer;
+        auto dtype = DType();
+        if (nvi !is null && nvi.assignExpression !is null)
+        {
+            auto unaryExpr = cast(UnaryExpression)(nvi.assignExpression);
+            if (unaryExpr !is null)
+            {
+                auto newExpr = unaryExpr.newExpression;
+                if (newExpr !is null)
+                {
+                    dtype = toDType(newExpr.type);
+                }
+            }
+        }
+        return new VariableSymbol(txt(token), offset(token), dtype);
     }
 
     UnionSymbol create(const UnionDeclaration decl, SymbolState state)

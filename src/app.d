@@ -40,7 +40,8 @@ int main(string[] args)
         return 1;
     }
 
-    Dasted d = new Dasted;
+    auto d = new Dasted;
+    d.
 
     d.setLogLevel(logLevel);
 
