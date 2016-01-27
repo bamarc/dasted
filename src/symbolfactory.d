@@ -70,7 +70,6 @@ class SymbolFactory
         if (imp.identifierChain !is null && imp.identifierChain.identifiers.length > 1)
         {
             auto names = imp.identifierChain.identifiers[0 .. $ - 1];
-            debug trace("Import packages ", names);
             auto pkg = new PackageSymbol(txt(names.front()));
             auto currPkg = pkg;
             names.popFront();
@@ -81,7 +80,6 @@ class SymbolFactory
                 currPkg = newPkg;
                 names.popFront();
             }
-//            std.
             currPkg.addImport(impSymbol);
             auto packageList = state.parent in state.packages;
             auto list = packageList is null ? [] : *packageList;

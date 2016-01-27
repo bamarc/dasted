@@ -6,6 +6,7 @@ import core.time;
 import std.container.dlist;
 import std.range;
 import std.typecons;
+import std.experimental.allocator;
 
 class LRUCache(K, V)
 {

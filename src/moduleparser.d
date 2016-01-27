@@ -4,7 +4,14 @@ import dparse.ast;
 import dparse.lexer;
 import dparse.parser;
 import std.experimental.allocator;
+import std.experimental.allocator.building_blocks.allocator_list;
+import std.experimental.allocator.building_blocks.region;
+import std.experimental.allocator.building_blocks.null_allocator;
+import std.experimental.allocator.mallocator;
 import std.typecons;
+
+alias ModuleAllocator = CAllocatorImpl!(AllocatorList!(
+    n => Region!Mallocator(128 * 1024), Mallocator));
 
 struct ModuleAST
 {
@@ -12,7 +19,7 @@ private:
     Module _mod;
     LexerConfig _config;
     const(Token)[] _tokens;
-    ParseAllocator _allocator;
+    ModuleAllocator _allocator;
     StringCache* _scache;
 public:
     inout(Module) getModule() inout
@@ -43,7 +50,7 @@ public:
         this.src = src;
         _ast._scache = new StringCache(StringCache.defaultBucketCount);
         _ast._config.fileName = "";
-        _ast._allocator = new ParseAllocator;
+        _ast._allocator = new ModuleAllocator;
         _ast._tokens = getTokensForParser(cast(ubyte[])src,
             _ast._config, _ast._scache);
         _ast._mod = parseModule(ast._tokens, "stdin", _ast._allocator,

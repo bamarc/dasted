@@ -41,7 +41,6 @@ int main(string[] args)
     }
 
     auto d = new Dasted;
-    d.
 
     d.setLogLevel(logLevel);
 

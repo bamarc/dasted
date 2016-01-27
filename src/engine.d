@@ -194,7 +194,8 @@ public:
         }
         auto firstSymbText = s.curr.type == tok!"identifier" ? stxt(s.curr)
                                                              : tokToString(s.curr.type);
-        debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr), ": ", offset(s.curr));
+        debug trace("tok = <", tokToString(s.curr.type), "> ", isExact(), " ",
+            txt(s.curr), ": ", offset(s.curr));
         ISymbol[] candidates = isExact() ? scopeSymbol.findSymbol(firstSymbText)
                                          : filtering(scopeSymbol.scopeAccess(), firstSymbText);
         while (s.next())

@@ -80,6 +80,7 @@ class ModuleState
 class ModuleCache
 {
     LRUCache!(string, ModuleState) _cache;
+    IAllocator alloc;
     ModuleVisitor _visitor;
 
     this(ModuleVisitor visitor)

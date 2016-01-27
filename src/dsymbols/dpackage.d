@@ -32,6 +32,7 @@ class PackageSymbol : TypedSymbol!(SymbolType.PACKAGE)
 
     override ISymbol[] dotAccess()
     {
+        debug trace("Package dot ", _imports.map!(a => a.name()), " with ", _packages.map!(a => a.name()));
         return cast(ISymbol[])_imports ~ cast(ISymbol[])_packages;
     }
 
@@ -46,7 +47,6 @@ class PackageSymbol : TypedSymbol!(SymbolType.PACKAGE)
 
 PackageSymbol[] mergeWithPackageList(PackageSymbol s, PackageSymbol[] list)
 {
-    debug trace("Merge package ", s.name(), " with ", list.map!(a => a.name()));
     foreach (p; list)
     {
         if (s.name() == p.name())

@@ -44,7 +44,6 @@ public:
 
     void mergePackageSymbols()
     {
-        debug trace("PKG ", _state.packages.byValue().join.map!(a => debugString(a)));
         foreach (sym, pkgs; _state.packages)
         {
             foreach (pkg; pkgs)
@@ -59,6 +58,7 @@ public:
         debug trace("Start visiting");
         _state.moduleSymbol = _moduleSymbol;
         mod.accept(this);
+//        mergePackageSymbols();
         debug trace("Stop visiting");
     }
 
