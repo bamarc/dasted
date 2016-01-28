@@ -35,10 +35,14 @@ class ClassSymbol : TypedSymbol!(SymbolType.CLASS)
         return baseClassSymbols().map!(a => a.dotAccess()).join ~ super.dotAccess();
     }
 
-    override ISymbol[] currentScopeSymbols()
+    override ISymbol[] currentScopeInnerSymbols()
     {
-        return super.currentScopeSymbols() ~ baseClassSymbols().map!(a => a.dotAccess()).join
-            ~ _thisSymbol;
+        return super.currentScopeInnerSymbols() ~ _thisSymbol;
+    }
+
+    override ISymbol[] currentScopeOuterSymbols()
+    {
+        return baseClassSymbols().map!(a => a.dotAccess()).join;
     }
 
     DType[] _baseClasses;

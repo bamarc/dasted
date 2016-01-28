@@ -2,6 +2,8 @@ module dsymbols.dsymbolbase;
 
 import dsymbols.common;
 
+import logger;
+
 import std.algorithm;
 import std.array;
 
@@ -125,14 +127,19 @@ class DSymbol : ISymbol
         return children();
     }
 
-    ISymbol[] currentScopeSymbols()
+    ISymbol[] currentScopeInnerSymbols()
     {
-        return children() ~ injected().map!(a => a.dotAccess()).join;
+        return children();
+    }
+
+    ISymbol[] currentScopeOuterSymbols()
+    {
+        return injected().map!(a => a.dotAccess()).join;
     }
 
     override ISymbol[] scopeAccess()
     {
-        auto res = currentScopeSymbols();
+        auto res = currentScopeOuterSymbols() ~ currentScopeInnerSymbols();
         if (parent() !is null)
         {
             res ~= parent().scopeAccess();
@@ -140,19 +147,29 @@ class DSymbol : ISymbol
         return res;
     }
 
-    ISymbol[] findSymbolsInScope(string name)
+    ISymbol[] findInnerSymbolsInScope(string name)
     {
-        return currentScopeSymbols.filter!(a => a.name() == name).array;
+        return currentScopeInnerSymbols().filter!(a => a.name() == name).array;
+    }
+
+    ISymbol[] findOuterSymbolsInScope(string name)
+    {
+        return currentScopeOuterSymbols().filter!(a => a.name() == name).array;
     }
 
     override ISymbol[] findSymbol(string name)
     {
-        auto res = findSymbolsInScope(name);
+        auto res = findInnerSymbolsInScope(name);
+        if (!res.empty())
+        {
+            return res;
+        }
+        res = findOuterSymbolsInScope(name);
         if (res.empty() && parent() !is null)
         {
             return parent().findSymbol(name);
         }
-        return res.array;
+        return res;
     }
 
     override bool applyTemplateArguments(const DType[] tokens)

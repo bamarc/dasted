@@ -19,9 +19,9 @@ class StructSymbol : TypedSymbol!(SymbolType.STRUCT)
         _thisSymbol = new ThisSymbol(this);
     }
 
-    override ISymbol[] currentScopeSymbols()
+    override ISymbol[] currentScopeInnerSymbols()
     {
-        return super.currentScopeSymbols() ~ _thisSymbol;
+        return super.currentScopeInnerSymbols() ~ _thisSymbol;
     }
 
     ThisSymbol _thisSymbol;
