@@ -3,10 +3,12 @@ module dsymbols.dpackage;
 import dsymbols.common;
 import dsymbols.dsymbolbase;
 import dsymbols.dimport;
+import dsymbols.dforward;
 
 import logger;
 
 import std.algorithm;
+import std.array;
 
 class PackageSymbol : TypedSymbol!(SymbolType.PACKAGE)
 {
@@ -33,7 +35,7 @@ class PackageSymbol : TypedSymbol!(SymbolType.PACKAGE)
     override ISymbol[] dotAccess()
     {
         debug trace("Package dot ", _imports.map!(a => a.name()), " with ", _packages.map!(a => a.name()));
-        return cast(ISymbol[])_imports ~ cast(ISymbol[])_packages;
+        return _imports.map!(a => cast(ISymbol)a).array ~ _packages.map!(a => cast(ISymbol)a).array;
     }
 
     inout(PackageSymbol)[] getPackages() inout
@@ -49,6 +51,7 @@ PackageSymbol[] mergeWithPackageList(PackageSymbol s, PackageSymbol[] list)
 {
     foreach (p; list)
     {
+
         if (s.name() == p.name())
         {
             foreach (i; s.getImports())
@@ -64,4 +67,22 @@ PackageSymbol[] mergeWithPackageList(PackageSymbol s, PackageSymbol[] list)
     }
     list ~= s;
     return list;
+}
+
+class PackageInjector : ForwardedSymbol
+{
+    this(PackageSymbol s)
+    {
+        super(s);
+    }
+
+    override ISymbol[] dotAccess()
+    {
+        return [implSymbol()];
+    }
+
+    override void addToParent(ISymbol parent)
+    {
+        return parent.inject(this);
+    }
 }

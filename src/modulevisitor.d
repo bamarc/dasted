@@ -48,7 +48,8 @@ public:
         {
             foreach (pkg; pkgs)
             {
-                pkg.parent = sym;
+                auto packageInjector = new PackageInjector(pkg);
+                packageInjector.parent = sym;
             }
         }
     }
@@ -58,7 +59,7 @@ public:
         debug trace("Start visiting");
         _state.moduleSymbol = _moduleSymbol;
         mod.accept(this);
-//        mergePackageSymbols();
+        mergePackageSymbols();
         debug trace("Stop visiting");
     }
 

@@ -67,15 +67,15 @@ class SymbolFactory
                                           state.moduleSymbol,
                                           getVisibility(Visibility.PRIVATE, state.attributes));
 
-        if (imp.identifierChain !is null && imp.identifierChain.identifiers.length > 1)
+        if (impSymbol.hasPackages())
         {
-            auto names = imp.identifierChain.identifiers[0 .. $ - 1];
-            auto pkg = new PackageSymbol(txt(names.front()));
+            auto names = impSymbol.packageNames();
+            auto pkg = new PackageSymbol(names.front());
             auto currPkg = pkg;
             names.popFront();
             while (!names.empty())
             {
-                auto newPkg = new PackageSymbol(txt(names.front()));
+                auto newPkg = new PackageSymbol(names.front());
                 currPkg.addPackage(newPkg);
                 currPkg = newPkg;
                 names.popFront();
@@ -84,6 +84,11 @@ class SymbolFactory
             auto packageList = state.parent in state.packages;
             auto list = packageList is null ? [] : *packageList;
             state.packages[state.parent] = mergeWithPackageList(pkg, list);
+        }
+        else
+        {
+            auto importInjector = new ImportInjector(impSymbol);
+            importInjector.parent = state.parent;
         }
         return impSymbol;
     }
