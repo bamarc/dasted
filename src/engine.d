@@ -121,9 +121,7 @@ public:
             {
                 return null;
             }
-            auto nextToken = identifierChain.back();
-            identifierChain.popBack();
-            if (nextToken == tok!".")
+            if (s.curr.type == tok!".")
             {
                 if (candidates.length != 1)
                 {
@@ -131,9 +129,9 @@ public:
                 }
                 candidates = candidates.front().dotAccess();
             }
-            else if (nextToken == tok!"identifier")
+            else if (s.curr.type == tok!"identifier")
             {
-                candidates = filter!(a => a.name() == txt(nextToken))(
+                candidates = filter!(a => a.name() == txt(s.curr))(
                     candidates).array();
             }
             else
@@ -234,5 +232,29 @@ public:
     ISymbol outline()
     {
         return activeModule();
+    }
+
+    Offset[] localUsages(Offset pos)
+    {
+        auto beforeTokens = getBeforeTokens(pos);
+        if (beforeTokens.empty())
+        {
+            return [];
+        }
+        string symbTxt = txt(beforeTokens.back());
+        auto decl = findDeclaration(pos);
+        Offset[] res;
+        foreach (t; activeTokens())
+        {
+            if (t.type == tok!"identifier" && t.text == symbTxt)
+            {
+                auto candidateSymb = findDeclaration(offset(t) + 1);
+                if (decl is candidateSymb)
+                {
+                    res ~= offset(t);
+                }
+            }
+        }
+        return res;
     }
 }
