@@ -23,6 +23,15 @@ private:
     ModuleVisitor _importVisitor;
     ModuleVisitor _activeVisitor;
     ModuleAST _activeAST;
+    EngineSettings _settings;
+
+    struct EngineSettings
+    {
+        bool clientSideFiltering = false;
+        bool ignoreUnderscore = true;
+        bool ignoreCase = true;
+    }
+
 public:
 
     this()
@@ -32,6 +41,21 @@ public:
         _importVisitor = new ModuleVisitor(_factory, ImportVisible);
         _activeVisitor = new ModuleVisitor(_factory, AllVisible);
         _moduleCache = new ModuleCache(_importVisitor);
+    }
+
+    void setFiltering(bool value)
+    {
+        _settings.clientSideFiltering = value;
+    }
+
+    void setIgnoreUnderscore(bool value)
+    {
+        _settings.ignoreUnderscore = value;
+    }
+
+    void setIgnoreCase(bool value)
+    {
+        _settings.ignoreUnderscore = value;
     }
 
     void setSource(string fileName, string source, uint revision)
@@ -139,7 +163,7 @@ public:
                 return null;
             }
         }
-        debug trace(map!(a => debugString(a))(candidates));
+//        debug trace(map!(a => debugString(a))(candidates));
         return candidates.empty() ? null : candidates.front();
     }
 
@@ -154,7 +178,29 @@ public:
     /// Basic filtering, can be easily improved
     ISymbol[] filtering(R)(R range, string substring)
     {
-        return range.filter!(a => a.name().startsWith(substring)).array;
+        return range.filter!(a => matchNames(a.name(), substring)).array;
+    }
+
+    bool matchNames(string a, string b)
+    {
+        if (_settings.clientSideFiltering)
+        {
+            return true;
+        }
+        if (_settings.ignoreCase)
+        {
+            import std.uni;
+            a = toLower(a);
+            b = toLower(b);
+        }
+        if (_settings.ignoreUnderscore)
+        {
+            import std.string;
+            a = a.removechars("_");
+            b = b.removechars("_");
+        }
+        trace ("filter ", a, " ", b);
+        return a.startsWith(b);
     }
 
     ISymbol[] complete(ISymbol scopeSymbol,
@@ -200,7 +246,7 @@ public:
         {
             debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr),
                         ": ", offset(s.curr), ", candidates = ",
-                        map!(a => debugString(a))(candidates));
+                        map!(a => debugString(a))(candidates.take(15)));
             if (candidates.empty())
             {
                 return null;
@@ -225,7 +271,7 @@ public:
                 return null;
             }
         }
-        debug trace(map!(a => debugString(a))(candidates));
+//        debug trace(map!(a => debugString(a))(candidates));
         return candidates;
     }
 
