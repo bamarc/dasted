@@ -4,12 +4,13 @@ import engine;
 import messages;
 import logger;
 
+import std.algorithm;
+import std.array;
+import std.conv;
+import std.datetime;
 import std.exception;
 import std.socket;
 import std.stdio;
-import std.conv;
-import std.array;
-import std.algorithm;
 
 import msgpack;
 import dparse.ast;
@@ -115,6 +116,13 @@ private:
 
     void processRequest(T)(const T req)
     {
+        watch.reset();
+        watch.start();
+        scope(exit)
+        {
+            watch.stop();
+            info("Request ", req.type, " time: ", watch.peek().msecs, " ms");
+        }
         debug trace("Request: ", req.type);
         debug static if (__traits(compiles, req.project))
             trace(" project ", req.project);
@@ -158,7 +166,9 @@ private:
         auto eng = engine(req.project);
         eng.setSource(req.src.filename, extractSources(req.src.text),
                       req.src.revision);
-        return typeof(return)(toMSymbol(eng.findDeclaration(req.cursor)));
+        auto res = typeof(return)(toMSymbol(eng.findDeclaration(req.cursor)));
+        debug trace("FD: ", res);
+        return res;
     }
 
     Reply!(MessageType.ADD_IMPORT_PATHS) onMessage(const Request!(MessageType.ADD_IMPORT_PATHS) req)
@@ -294,10 +304,10 @@ private:
     bool errorReplies = false;
     enum MAX_MESSAGE_SIZE = 32 * 1024 * 1024;
 
-    uint revision;
     // TODO: a common cache for system directories
     Engine[string] engines;
     string[] globalImportPaths;
+    StopWatch watch;
 
 
 }

@@ -163,7 +163,7 @@ public:
                 return null;
             }
         }
-//        debug trace(map!(a => debugString(a))(candidates));
+        debug trace(map!(a => debugString(a))(candidates));
         return candidates.empty() ? null : candidates.front();
     }
 
@@ -271,7 +271,7 @@ public:
                 return null;
             }
         }
-//        debug trace(map!(a => debugString(a))(candidates));
+        debug trace(map!(a => debugString(a))(candidates));
         return candidates;
     }
 
