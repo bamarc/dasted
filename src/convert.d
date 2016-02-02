@@ -9,6 +9,7 @@ import dparse.parser;
 import dparse.formatter;
 
 import std.array;
+import std.algorithm;
 
 alias messages.MSymbol MSymbol;
 
@@ -42,6 +43,7 @@ MSymbol toMSymbol(const(ISymbol) symbol)
     }
     s.type = symbol.symbolType().toUbyteType();
     s.location.filename = symbol.fileName();
+    s.parameters = toStringList(symbol.parameters());
     if (s.location.filename.empty())
     {
         s.location.filename = "stdin";
@@ -65,4 +67,9 @@ MScope toMScope(const(ISymbol) symbol)
         mscope.children ~= toMScope(s);
     }
     return mscope;
+}
+
+string[] toStringList(const(ParameterList) params)
+{
+    return params.map!(a => debugString(a.type) ~ " " ~ a.name).array;
 }

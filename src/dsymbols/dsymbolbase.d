@@ -75,6 +75,11 @@ class DSymbol : ISymbol
         return _parent is null ? "<no-filename>" : _parent.fileName();
     }
 
+    override ParameterList parameters() const
+    {
+        return ParameterList.init;
+    }
+
     override ScopeBlock scopeBlock() const
     {
         return _info.scopeBlock;

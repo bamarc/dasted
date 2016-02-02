@@ -76,7 +76,7 @@ const(Token)[] getIdentifierChain(R)(R range)
     bool eligible(const(Token) t)
     {
         return t.type == tok!"identifier" || t.type == tok!"."
-            || t.type == tok!"this";
+            || t.type == tok!"this" || t.type == tok!"(" || t.type == tok!")";
     }
     typeof(return) res;
     while (!range.empty() && eligible(range.back()))

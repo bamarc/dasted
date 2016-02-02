@@ -31,6 +31,11 @@ class FunctionSymbol : TypedSymbol!(SymbolType.FUNC)
         return null;
     }
 
+    override ParameterList parameters() const
+    {
+        return _args.map!(a => const(Parameter)(a.name(), a.type())).array;
+    }
+
     VariableSymbol[] _args;
     DType _returnType;
 }

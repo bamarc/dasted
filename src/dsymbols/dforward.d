@@ -41,6 +41,11 @@ class ForwardedSymbol : ISymbol
         return _impl.fileName();
     }
 
+    override ParameterList parameters() const
+    {
+        return _impl.parameters();
+    }
+
     override ScopeBlock scopeBlock() const
     {
         return _impl.scopeBlock();

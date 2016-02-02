@@ -155,9 +155,8 @@ private:
         auto eng = engine(req.project);
         eng.setSource(req.src.filename, extractSources(req.src.text),
                       req.src.revision);
-        return typeof(return)(false,
-            map!(a => toMSymbol(a))(
-                eng.complete(req.cursor)).array());
+        auto res = eng.complete(req.cursor);
+        return typeof(return)(res[1], res[0].map!(a => toMSymbol(a)).array);
     }
 
     Reply!(MT.FIND_DECLARATION) onMessage(

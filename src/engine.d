@@ -138,6 +138,7 @@ public:
                 return null;
             }
         }
+        bool calltip = false;
         ISymbol[] candidates = scopeSymbol.findSymbol(txt(s.curr));
         while (s.next())
         {
@@ -167,7 +168,7 @@ public:
         return candidates.empty() ? null : candidates.front();
     }
 
-    ISymbol[] complete(Offset pos)
+    Tuple!(ISymbol[], bool) complete(Offset pos)
     {
         debug trace("offset = ", pos);
         auto parent = findScope(pos);
@@ -203,14 +204,14 @@ public:
         return a.startsWith(b);
     }
 
-    ISymbol[] complete(ISymbol scopeSymbol,
+    Tuple!(ISymbolList, bool) complete(ISymbol scopeSymbol,
         const(Token)[] identifierChain, Offset limit)
     {
         debug trace("chain = ", map!(a => txt(a))(identifierChain),
                     " scope = ", debugString(scopeSymbol));
         if (identifierChain.empty())
         {
-            return null;
+            return tuple(ISymbolList.init, false);
         }
 
         auto s = TokenStream(identifierChain);
@@ -233,9 +234,10 @@ public:
             scopeSymbol = activeModule();
             if (!s.next())
             {
-                return null;
+                return tuple(ISymbolList.init, false);
             }
         }
+        bool calltip = false;
         auto firstSymbText = s.curr.type == tok!"identifier" ? stxt(s.curr)
                                                              : tokToString(s.curr.type);
         debug trace("tok = <", tokToString(s.curr.type), "> ", isExact(), " ",
@@ -249,13 +251,13 @@ public:
                         map!(a => debugString(a))(candidates.take(15)));
             if (candidates.empty())
             {
-                return null;
+                return tuple(ISymbolList.init, false);
             }
             if (s.curr.type == tok!".")
             {
                 if (candidates.length != 1)
                 {
-                    return null;
+                    return tuple(ISymbolList.init, false);
                 }
                 candidates = candidates.front().dotAccess();
             }
@@ -266,13 +268,21 @@ public:
                         candidates).array()
                     : filtering(candidates, stxt(s.curr));
             }
+            else if (s.curr.type == tok!"(")
+            {
+                calltip = true;
+            }
+            else if (s.curr.type == tok!")")
+            {
+                calltip = false;
+            }
             else
             {
-                return null;
+                return tuple(ISymbolList.init, false);
             }
         }
         debug trace(map!(a => debugString(a))(candidates));
-        return candidates;
+        return tuple(candidates, calltip);
     }
 
     ISymbol outline()

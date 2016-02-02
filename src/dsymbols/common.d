@@ -99,6 +99,15 @@ bool isInside(ISymbol sym, ISymbol scp)
     return scb.isValid() && scb.begin < pos && scb.end > pos;
 }
 
+struct Parameter
+{
+    string name;
+    DType type;
+}
+
+alias ISymbolList = ISymbol[];
+alias ParameterList = const(Parameter)[];
+
 interface ISymbol
 {
     SymbolType symbolType() const;
@@ -107,6 +116,7 @@ interface ISymbol
     inout(DType) type() inout;
     Offset position() const;
     string fileName() const;
+    ParameterList parameters() const;
 
     ScopeBlock scopeBlock() const;
     final bool hasScope() const
