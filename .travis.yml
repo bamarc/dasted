@@ -10,3 +10,5 @@ install:
 before_script:
 
 script:
+  - dub build --compiler=${DC}
+
