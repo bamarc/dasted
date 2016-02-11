@@ -172,6 +172,7 @@ class SymbolFactory
         {
             if (decl.initializers[i] !is null)
             {
+                debug trace("Auto ", txt(decl.identifiers[i]), " = ", debugTypes(decl.initializers[i]));
                 res ~= create(decl.identifiers[i], decl.initializers[i], state);
             }
         }
@@ -187,10 +188,19 @@ class SymbolFactory
             auto unaryExpr = cast(UnaryExpression)(nvi.assignExpression);
             if (unaryExpr !is null)
             {
+                debug trace("Auto ", debugTypes(unaryExpr), txt(unaryExpr.prefix), '!', txt(unaryExpr.suffix));
+                if (unaryExpr.unaryExpression !is null)
+                {
+                    debug trace("Auto un ", debugTypes(unaryExpr.unaryExpression), txt(unaryExpr.unaryExpression.prefix), '!', txt(unaryExpr.unaryExpression.suffix));
+                }
                 auto newExpr = unaryExpr.newExpression;
                 if (newExpr !is null)
                 {
                     dtype = toDType(newExpr.type);
+                }
+                else if (unaryExpr.functionCallExpression !is null)
+                {
+//                    dtype = toDType(unaryExpr.functionCallExpression);
                 }
             }
         }

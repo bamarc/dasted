@@ -155,12 +155,17 @@ interface ISymbol
     inout(ISymbol)[] injected() inout;
 }
 
+interface EvaluatingType
+{
+    DType evaluate();
+}
+
 struct DType
 {
     SimpleDType[] chain;
     bool builtin = false;
-    bool evaluate = false;
     string typeString;
+    EvaluatingType evaluate;
 
     string asString() const
     {
