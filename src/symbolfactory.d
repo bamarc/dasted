@@ -120,7 +120,6 @@ class SymbolFactory
 
     FunctionSymbol create(const FunctionDeclaration decl, SymbolState state)
     {
-        debug trace("New Function ", txt(decl.name));
         Rebindable!(const(BlockStatement)) st;
 
         st = safeNull(decl).functionBody.blockStatement.get;
@@ -157,7 +156,6 @@ class SymbolFactory
         {
             return create(decl.autoDeclaration, state);
         }
-        debug trace("Variable with type ", debugString(dtype));
         foreach (d; decl.declarators)
         {
             res ~= new VariableSymbol(txt(d.name), offset(d.name), dtype);
@@ -183,26 +181,9 @@ class SymbolFactory
     {
         auto nvi = initializer.nonVoidInitializer;
         auto dtype = DType();
-        if (nvi !is null && nvi.assignExpression !is null)
+        if (nvi !is null)
         {
-            auto unaryExpr = cast(UnaryExpression)(nvi.assignExpression);
-            if (unaryExpr !is null)
-            {
-                debug trace("Auto ", debugTypes(unaryExpr), txt(unaryExpr.prefix), '!', txt(unaryExpr.suffix));
-                if (unaryExpr.unaryExpression !is null)
-                {
-                    debug trace("Auto un ", debugTypes(unaryExpr.unaryExpression), txt(unaryExpr.unaryExpression.prefix), '!', txt(unaryExpr.unaryExpression.suffix));
-                }
-                auto newExpr = unaryExpr.newExpression;
-                if (newExpr !is null)
-                {
-                    dtype = toDType(newExpr.type);
-                }
-                else if (unaryExpr.functionCallExpression !is null)
-                {
-//                    dtype = toDType(unaryExpr.functionCallExpression);
-                }
-            }
+            dtype = toDType(nvi, state.parent);
         }
         return new VariableSymbol(txt(token), offset(token), dtype);
     }

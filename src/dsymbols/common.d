@@ -157,8 +157,7 @@ interface ISymbol
 
 interface EvaluatingType
 {
-    DType evaluate();
-    ISymbol parent();
+    ISymbol[] evaluate();
 }
 
 struct DType
@@ -181,6 +180,11 @@ struct DType
     this(SimpleDType[] types)
     {
         chain = types;
+    }
+
+    this(EvaluatingType ev)
+    {
+        evaluate = ev;
     }
 }
 
@@ -218,13 +222,14 @@ struct SimpleDType
 ISymbol[] findSymbol(R)(ISymbol symbol, R tokenChain)
 {
     import std.range;
-    auto declarations = symbol.parent().findSymbol(tokenChain.front());
+    debug trace("Finding symbol for ", tokenChain.join("."));
+    auto declarations = symbol.findSymbol(tokenChain.front());
     foreach (dotType; tokenChain.dropOne())
     {
         debug trace("declarations = ", map!(a => a.name())(declarations));
         if (declarations.empty())
         {
-            return null;
+            break;
         }
         declarations = filter!(a => a.name() == dotType)(
             declarations.front().dotAccess()).array();
@@ -240,7 +245,7 @@ ISymbol[] findType(ISymbol symbol, DType type)
     if (type.evaluate !is null)
     {
         debug trace("Type evaluation may not be implemented for ", debugString(type));
-        return findType(type.evaluate.parent(), type.evaluate.evaluate());
+        return type.evaluate.evaluate();
     }
 
     if (type.builtin || type.chain.empty())
@@ -248,7 +253,17 @@ ISymbol[] findType(ISymbol symbol, DType type)
         return null;
     }
 
-    return findSymbol(symbol, type.chain.map!(a => a.name));
+    return findSymbol(symbol.parent, type.chain.map!(a => a.name));
+}
+
+ISymbol[] evaluateType(ISymbol symbol)
+{
+    debug trace("Evaluate type: ", debugString(symbol));
+    if (symbol is null)
+    {
+        return null;
+    }
+    return findType(symbol, symbol.type());
 }
 
 string debugString(const(ISymbol) s)
