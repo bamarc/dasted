@@ -158,6 +158,7 @@ interface ISymbol
 interface EvaluatingType
 {
     DType evaluate();
+    ISymbol parent();
 }
 
 struct DType
@@ -214,13 +215,32 @@ struct SimpleDType
 
 }
 
-ISymbol[] findType(ISymbol symbol, const(DType) type)
+ISymbol[] findSymbol(R)(ISymbol symbol, R tokenChain)
 {
     import std.range;
-    if (type.evaluate)
+    auto declarations = symbol.parent().findSymbol(tokenChain.front());
+    foreach (dotType; tokenChain.dropOne())
     {
-        debug trace("Type evaluation not implemented for ", debugString(type));
-        return null;
+        debug trace("declarations = ", map!(a => a.name())(declarations));
+        if (declarations.empty())
+        {
+            return null;
+        }
+        declarations = filter!(a => a.name() == dotType)(
+            declarations.front().dotAccess()).array();
+    }
+    debug trace("Declaration = ", declarations.empty() ? "NO" : debugString(declarations.front()),
+        " found for ", tokenChain.join("."));
+    return declarations;
+}
+
+ISymbol[] findType(ISymbol symbol, DType type)
+{
+    import std.range;
+    if (type.evaluate !is null)
+    {
+        debug trace("Type evaluation may not be implemented for ", debugString(type));
+        return findType(type.evaluate.parent(), type.evaluate.evaluate());
     }
 
     if (type.builtin || type.chain.empty())
@@ -228,20 +248,7 @@ ISymbol[] findType(ISymbol symbol, const(DType) type)
         return null;
     }
 
-    auto declarations = symbol.parent().findSymbol(type.chain.front().name);
-    foreach (dotType; type.chain.dropOne())
-    {
-        debug trace("declarations = ", map!(a => a.name())(declarations));
-        if (declarations.empty())
-        {
-            return null;
-        }
-        declarations = filter!(a => a.name() == dotType.name)(
-            declarations.front().dotAccess()).array();
-    }
-    debug trace("Declaration = ", declarations.empty() ? "NO" : debugString(declarations.front()),
-        " found for ", debugString(type));
-    return declarations;
+    return findSymbol(symbol, type.chain.map!(a => a.name));
 }
 
 string debugString(const(ISymbol) s)

@@ -254,7 +254,7 @@ DType toDType(const(Type) type)
 //    }
 //}
 
-auto debugString(T)(const(T) node)
+auto debugStringUnsafe(T)(const(T) node)
     if (is(T : ASTNode))
 {
     import msgpack;
@@ -391,7 +391,6 @@ auto debugTypes(T)(const(T) node)
     mixin impl!(KeyValuePair);
     mixin impl!(KeyValuePairs);
     mixin impl!(LabeledStatement);
-    mixin impl!(LambdaExpression);
     mixin impl!(LastCatch);
     mixin impl!(LinkageAttribute);
     mixin impl!(MemberFunctionAttribute);
