@@ -55,6 +55,8 @@ class UsersDerived : UsersBase
 
      static class SubClass
      {
+         UsersDerived parent;
+         int sub_foo() { return 112; }
      }
 }
 
@@ -69,11 +71,13 @@ int main()
 {
     writeln(foo(15));
     writeln("Test");
+    UsersDerived.SubClass subclass = new UsersDerived.SubClass;
+    auto another_c = subclass.parent;
+    another_c.get(0);
 }
 
 unittest()
 {
-    UsersDerived.SubClass c;
     UsersDerived d1 = new UsersDerived;
     auto s = d1.get(5, "wow");
 }

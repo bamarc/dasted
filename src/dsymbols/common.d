@@ -155,7 +155,7 @@ interface ISymbol
     inout(ISymbol)[] injected() inout;
 }
 
-interface EvaluatingType
+interface TypeEvaluator
 {
     ISymbol[] evaluate();
 }
@@ -165,7 +165,12 @@ struct DType
     SimpleDType[] chain;
     bool builtin = false;
     string typeString;
-    EvaluatingType evaluate;
+    TypeEvaluator evaluate;
+
+    ISymbol[] find(ISymbol s)
+    {
+        return findType(s, this);
+    }
 
     string asString() const
     {
@@ -182,7 +187,7 @@ struct DType
         chain = types;
     }
 
-    this(EvaluatingType ev)
+    this(TypeEvaluator ev)
     {
         evaluate = ev;
     }

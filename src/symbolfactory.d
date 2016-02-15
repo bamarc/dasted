@@ -1,6 +1,7 @@
 module symbolfactory;
 
 import attributeutils;
+import evaluator;
 import dsymbols;
 import logger;
 import tokenutils;
@@ -183,7 +184,7 @@ class SymbolFactory
         auto dtype = DType();
         if (nvi !is null)
         {
-            dtype = toDType(nvi, state.parent);
+            dtype = DType(new AutoVariableEvaluator(initializer, state.parent));
         }
         return new VariableSymbol(txt(token), offset(token), dtype);
     }
