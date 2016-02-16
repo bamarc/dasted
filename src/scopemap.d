@@ -27,9 +27,6 @@ public:
     void add(ISymbol s)
     {
         auto scb = s.scopeBlock();
-//        auto p = s;
-//        p.
-//        p.
         debug(wlog) log(scb.begin.offset, ' ', scb.end.offset);
         if (!scb.isValid())
         {

@@ -27,6 +27,15 @@
 			"targetName": "module-ast",
 			"sourceFiles": ["./sample/module_ast.d"],
 			"excludedSourceFiles": ["src/app.d"]
+		},
+		{
+			"name": "run-tests",
+			"targetType": "executable",
+			"targetName": "run-tests",
+			"sourceFiles": ["./test/run_tests.d",
+					"./test/test_common.d",
+					"./test/find_declaration_simple.d"],
+			"excludedSourceFiles": ["src/app.d"]
 		}
 	]
 }

@@ -213,7 +213,6 @@ class SymbolFactory
 
     AliasSymbol create(const AliasDeclaration decl, SymbolState state)
     {
-//        debug trace("Alias: ", debugString(decl));
         if (decl.initializers.empty())
         {
             return new AliasSymbol("", 0, toDType(decl.type),
