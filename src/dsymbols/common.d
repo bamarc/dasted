@@ -180,6 +180,7 @@ struct DType
     this(string name, bool builtin = false)
     {
         chain = [SimpleDType(name, builtin)];
+        this.builtin = builtin;
     }
 
     this(SimpleDType[] types)
