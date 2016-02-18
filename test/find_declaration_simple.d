@@ -4,6 +4,7 @@ import engine;
 import dsymbols.common;
 import test_common;
 
+import std.algorithm;
 import std.stdio;
 
 unittest
@@ -83,4 +84,54 @@ unittest
     assert(symbol3.type().builtin == true);
     assert(symbol3.type().asString() == "bool");
     assert(symbol3.parent.symbolType() == SymbolType.MODULE);
+}
+
+unittest
+{
+    Engine engine = new Engine;
+    string sources = q"(
+        class A { class |B { class |C { B |abc; } int |ab; } }
+        A.B.C |c = null;
+        c.ab|c.a|b = 5;
+        EOF)";
+    auto srcPos = getSourcePos(sources);
+    engine.setSource("test", srcPos.src, 0);
+
+    auto symbol = engine.findDeclaration(srcPos.pos[5]);
+
+    assert(symbol !is null);
+    assert(symbol.name() == "abc");
+    assert(symbol.position() == srcPos.pos[2]);
+    assert(symbol.type().builtin == false);
+    assert(symbol.type().asString() == "B");
+    auto btypes = symbol.type().find(symbol);
+    assert(btypes.length == 1);
+    assert(btypes[0].name() == "B");
+    assert(btypes[0].dotAccess().map!(a => a.name).equal(["C", "ab"]));
+
+    symbol = engine.findDeclaration(srcPos.pos[6]);
+
+    assert(symbol !is null);
+    assert(symbol.name() == "ab");
+    assert(symbol.position() == srcPos.pos[3]);
+    assert(symbol.type().builtin == true);
+    assert(symbol.type().asString() == "int");
+}
+
+unittest
+{
+    Engine engine = new Engine;
+    string sources = q"(
+        auto |va|r_a = 4;
+        EOF)";
+    auto srcPos = getSourcePos(sources);
+    engine.setSource("test", srcPos.src, 0);
+
+    auto symbol = engine.findDeclaration(srcPos.pos[1]);
+
+    assert(symbol !is null);
+    assert(symbol.name() == "var_a");
+    assert(symbol.position() == srcPos.pos[0]);
+    assert(symbol.type().builtin == false);
+    assert(symbol.type().evaluate !is null);
 }
