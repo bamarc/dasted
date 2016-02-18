@@ -73,10 +73,28 @@ ScopeBlock fromFunctionBody(const FunctionBody fb)
 
 const(Token)[] getIdentifierChain(R)(R range)
 {
+    int parentheses = 0;
     bool eligible(const(Token) t)
     {
+        if (t.type == tok!")")
+        {
+            ++parentheses;
+            return true;
+        }
+        if (t.type == tok!")")
+        {
+            if (parentheses > 0)
+            {
+                --parentheses;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
         return t.type == tok!"identifier" || t.type == tok!"."
-            || t.type == tok!"this" || t.type == tok!"(" || t.type == tok!")";
+            || t.type == tok!"this";
     }
     typeof(return) res;
     while (!range.empty() && eligible(range.back()))
