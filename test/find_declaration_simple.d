@@ -91,7 +91,7 @@ unittest
     Engine engine = new Engine;
     string sources = q"(
         class A { class |B { class |C { B |abc; } int |ab; } }
-        A.B.C |c = null;
+        const(A.B.C) |c = null;
         c.ab|c.a|b = 5;
         EOF)";
     auto srcPos = getSourcePos(sources);

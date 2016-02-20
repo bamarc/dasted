@@ -13,6 +13,7 @@ import msgpack;
 
 import dastedserver;
 
+import complete_simple;
 import find_declaration_simple;
 
 int main(string[] args)

@@ -34,6 +34,7 @@
 			"targetName": "run-tests",
 			"sourceFiles": ["./test/run_tests.d",
 					"./test/test_common.d",
+					"./test/complete_simple.d",
 					"./test/find_declaration_simple.d"],
 			"excludedSourceFiles": ["src/app.d"]
 		}
