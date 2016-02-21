@@ -11,9 +11,10 @@ import logger;
 
 import std.algorithm;
 import std.array;
+import std.typecons;
 
 
-string txt(Token t)
+string txt(const(Token) t)
 {
     return t.text.idup;
 }
@@ -21,6 +22,11 @@ string txt(Token t)
 string tokToString(IdType t)
 {
     return str(t);
+}
+
+string tokToString(const(Token) t)
+{
+    return t.type == tok!"identifier" ? txt(t) : tokToString(t.type);
 }
 
 Offset offset(Token t)
@@ -71,38 +77,127 @@ ScopeBlock fromFunctionBody(const FunctionBody fb)
     return fromBlock(st.get);
 }
 
-const(Token)[] getIdentifierChain(R)(R range)
+enum ParenthesisType
 {
-    int parentheses = 0;
-    bool eligible(const(Token) t)
+    NONE = 0,
+    ROUND = 1,
+    SQUARE = 2,
+    CURLY = 3,
+}
+
+Tuple!(ParenthesisType, bool) getParenthesisType(const(Token) t)
+{
+    switch (t.type)
     {
-        if (t.type == tok!")")
+    case tok!"(": return tuple(ParenthesisType.ROUND, true);
+    case tok!")": return tuple(ParenthesisType.ROUND, false);
+    case tok!"[": return tuple(ParenthesisType.SQUARE, true);
+    case tok!"]": return tuple(ParenthesisType.SQUARE, false);
+    case tok!"{": return tuple(ParenthesisType.CURLY, true);
+    case tok!"}": return tuple(ParenthesisType.CURLY, false);
+    default: break;
+    }
+    return tuple(ParenthesisType.NONE, false);
+}
+
+Tuple!(const(Token)[], bool, int) getIdentifierChain(R)(R range, bool complete)
+{
+    bool calltip = false;
+    int calltipIndex = 0;
+    const(Token)[] res;
+    if (range.back.type == tok!",")
+    {
+        if (!complete)
         {
-            ++parentheses;
-            return true;
+            return typeof(return).init;
         }
-        if (t.type == tok!")")
+        int parentheses = 0;
+        while (!range.empty())
         {
-            if (parentheses > 0)
+            if (range.back.type != tok!";")
             {
-                --parentheses;
-                return true;
+                return typeof(return).init;
+            }
+            auto isParenthesis = getParenthesisType(range.back);
+
+            if (isParenthesis[0] == ParenthesisType.ROUND)
+            {
+                if (!isParenthesis[1])
+                {
+                    ++parentheses;
+                }
+                else
+                {
+                    if (parentheses < 0)
+                    {
+                        calltip = true;
+                        break;
+                    }
+                }
+            }
+            else if (range.back.type == tok!"," && parentheses == 0)
+            {
+                ++calltipIndex;
+            }
+            range.popBack();
+        }
+    }
+    else if (range.back.type == tok!",")
+    {
+        calltip = true;
+    }
+
+    int[ParenthesisType.max + 1] parentheses;
+    while (!range.empty)
+    {
+        auto isParenthesis = getParenthesisType(range.back);
+        if (isParenthesis[0] != ParenthesisType.NONE)
+        {
+            if (!isParenthesis[1])
+            {
+                ++parentheses[isParenthesis[0]];
             }
             else
             {
-                return false;
+                if (parentheses[isParenthesis[0]] > 0)
+                {
+                    --parentheses[isParenthesis[0]];
+                }
+                else
+                {
+                    break;
+                }
             }
         }
-        return t.type == tok!"identifier" || t.type == tok!"."
-            || t.type == tok!"this";
-    }
-    typeof(return) res;
-    while (!range.empty() && eligible(range.back()))
-    {
+        else if (parentheses[].all!(a => a == 0) && range.back.type != tok!"identifier"
+                 && range.back.type != tok!"." && range.back.type != tok!"this")
+        {
+            break;
+        }
         res ~= range.back();
         range.popBack();
     }
-    return res;
+    return tuple(res, calltip, calltipIndex);
+}
+
+unittest
+{
+    import engine;
+    Engine e = new Engine;
+    string src1 = "int a; a.b.foo(a, b).";
+    e.setSource("test", src1, 0);
+    auto toks = e.activeTokens();
+    auto res1 = getIdentifierChain(toks, true);
+    assert(res1[0].map!(a => tokToString(a)).equal(
+        [".", ")", "b", ",", "a", "(", "foo", ".", "b", ".", "a"]));
+
+    string src2 = "Type t.a(p)";
+    e.setSource("test", src2, 0);
+    toks = e.activeTokens();
+    auto res2 = getIdentifierChain(toks, true);
+//    import std.stdio; writeln(res2[0].map!(a => tokToString(a)).array);
+//    assert(res2[0].map!(a => tokToString(a)).equal(
+//        [")", "p", "(", "a", ".", "t"]));
 }
 
 struct TokenStream

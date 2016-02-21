@@ -116,7 +116,7 @@ public:
     {
         debug trace("offset = ", pos);
         auto parent = findScope(pos);
-        auto tokens = getIdentifierChain(getBeforeTokens(pos));
+        auto tokens = getIdentifierChain(getBeforeTokens(pos), false)[0];
         return findDeclaration(parent, tokens);
     }
 
@@ -168,12 +168,12 @@ public:
         return candidates.empty() ? null : candidates.front();
     }
 
-    Tuple!(ISymbol[], bool) complete(Offset pos)
+    Tuple!(ISymbol[], bool, int) complete(Offset pos)
     {
         debug trace("offset = ", pos);
         auto parent = findScope(pos);
-        auto tokens = getIdentifierChain(getBeforeTokens(pos));
-        return complete(parent, tokens, pos);
+        auto identStream = getIdentifierChain(getBeforeTokens(pos), true);
+        return tuple(complete(parent, identStream[0], pos), identStream[1], identStream[2]);
     }
 
     /// Basic filtering, can be easily improved
@@ -204,14 +204,14 @@ public:
         return a.startsWith(b);
     }
 
-    Tuple!(ISymbolList, bool) complete(ISymbol scopeSymbol,
+    ISymbolList complete(ISymbol scopeSymbol,
         const(Token)[] identifierChain, Offset limit)
     {
         debug trace("chain = ", map!(a => txt(a))(identifierChain),
                     " scope = ", debugString(scopeSymbol));
         if (identifierChain.empty())
         {
-            return tuple(ISymbolList.init, false);
+            return ISymbolList.init;
         }
 
         auto s = TokenStream(identifierChain);
@@ -234,10 +234,9 @@ public:
             scopeSymbol = activeModule();
             if (!s.next())
             {
-                return tuple(ISymbolList.init, false);
+                return ISymbolList.init;
             }
         }
-        bool calltip = false;
         auto firstSymbText = s.curr.type == tok!"identifier" ? stxt(s.curr)
                                                              : tokToString(s.curr.type);
         debug trace("tok = <", tokToString(s.curr.type), "> ", isExact(), " ",
@@ -251,13 +250,13 @@ public:
                         map!(a => debugString(a))(candidates.take(15)));
             if (candidates.empty())
             {
-                return tuple(ISymbolList.init, false);
+                return ISymbolList.init;
             }
             if (s.curr.type == tok!".")
             {
                 if (candidates.length != 1)
                 {
-                    return tuple(ISymbolList.init, false);
+                    return ISymbolList.init;
                 }
                 candidates = candidates.front().dotAccess();
             }
@@ -268,21 +267,13 @@ public:
                         candidates).array()
                     : filtering(candidates, stxt(s.curr));
             }
-            else if (s.curr.type == tok!"(")
-            {
-                calltip = true;
-            }
-            else if (s.curr.type == tok!")")
-            {
-                calltip = false;
-            }
             else
             {
-                return tuple(ISymbolList.init, false);
+                return ISymbolList.init;
             }
         }
         debug trace(map!(a => debugString(a))(candidates));
-        return tuple(candidates, calltip);
+        return candidates;
     }
 
     ISymbol outline()
