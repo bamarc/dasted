@@ -105,49 +105,71 @@ Tuple!(const(Token)[], bool, int) getIdentifierChain(R)(R range, bool complete)
     bool calltip = false;
     int calltipIndex = 0;
     const(Token)[] res;
+    int[ParenthesisType.max + 1] parentheses;
     if (range.back.type == tok!",")
     {
         if (!complete)
         {
             return typeof(return).init;
         }
-        int parentheses = 0;
+        range.popBack();
+        ++calltipIndex;
         while (!range.empty())
         {
-            if (range.back.type != tok!";")
+            if (range.back.type == tok!";")
             {
                 return typeof(return).init;
             }
             auto isParenthesis = getParenthesisType(range.back);
 
-            if (isParenthesis[0] == ParenthesisType.ROUND)
+            if (isParenthesis[0] != ParenthesisType.NONE)
             {
                 if (!isParenthesis[1])
                 {
-                    ++parentheses;
+                    ++parentheses[isParenthesis[0]];
                 }
                 else
                 {
-                    if (parentheses < 0)
+                    if (parentheses[isParenthesis[0]] > 0)
                     {
-                        calltip = true;
+                        --parentheses[isParenthesis[0]];
+                    }
+                    else
+                    {
                         break;
                     }
                 }
             }
-            else if (range.back.type == tok!"," && parentheses == 0)
+            else if (range.back.type == tok!"," && parentheses[].all!(a => a == 0))
             {
                 ++calltipIndex;
             }
             range.popBack();
         }
     }
-    else if (range.back.type == tok!",")
+
+    if (!range.empty && range.back.type == tok!"(")
     {
         calltip = true;
+        res ~= range.back;
+        range.popBack();
     }
 
-    int[ParenthesisType.max + 1] parentheses;
+    parentheses = parentheses.init;
+
+    bool expect(const(Token) t, const(Token)[] history)
+    {
+        if (history.empty)
+        {
+            return t.type == tok!"identifier" || t.type == tok!".";
+        }
+        if (history.back.type == tok!"identifier")
+        {
+            return t.type == tok!".";
+        }
+        return t.type == tok!"identifier" || range.back.type == tok!"this";
+    }
+
     while (!range.empty)
     {
         auto isParenthesis = getParenthesisType(range.back);
@@ -169,8 +191,7 @@ Tuple!(const(Token)[], bool, int) getIdentifierChain(R)(R range, bool complete)
                 }
             }
         }
-        else if (parentheses[].all!(a => a == 0) && range.back.type != tok!"identifier"
-                 && range.back.type != tok!"." && range.back.type != tok!"this")
+        else if (parentheses[].all!(a => a == 0) && !expect(range.back, res))
         {
             break;
         }
@@ -190,14 +211,57 @@ unittest
     auto res1 = getIdentifierChain(toks, true);
     assert(res1[0].map!(a => tokToString(a)).equal(
         [".", ")", "b", ",", "a", "(", "foo", ".", "b", ".", "a"]));
+    assert(res1[1] == false);
 
     string src2 = "Type t.a(p)";
     e.setSource("test", src2, 0);
     toks = e.activeTokens();
     auto res2 = getIdentifierChain(toks, true);
-//    import std.stdio; writeln(res2[0].map!(a => tokToString(a)).array);
-//    assert(res2[0].map!(a => tokToString(a)).equal(
-//        [")", "p", "(", "a", ".", "t"]));
+    assert(res2[0].map!(a => tokToString(a)).equal(
+        [")", "p", "(", "a", ".", "t"]));
+    assert(res2[1] == false);
+
+    string src3 = "t(x.v, g) + (a.b";
+    e.setSource("test", src3, 0);
+    toks = e.activeTokens();
+    auto res3 = getIdentifierChain(toks, true);
+    assert(res3[0].map!(a => tokToString(a)).equal(
+        ["b", ".", "a"]));
+    assert(res3[1] == false);
+
+    string src4 = "t(x.v(w, y(a.b[2, c]   + p )).f().test";
+    e.setSource("test", src4, 0);
+    toks = e.activeTokens();
+    auto res4 = getIdentifierChain(toks, true);
+    assert(res4[0].map!(a => tokToString(a)).equal(
+        ["test", ".", ")", "(", "f", ".", ")", ")", "p", "+", "]", "c",
+         ",", "intLiteral", "[", "b", ".", "a", "(", "y", ",", "w", "(",
+         "v", ".", "x"]));
+    assert(res4[1] == false);
+
+    string src5 = "foo(";
+    e.setSource("test", src5, 0);
+    toks = e.activeTokens();
+    auto res5 = getIdentifierChain(toks, true);
+    assert(res5[0].map!(a => tokToString(a)).equal(["(", "foo"]));
+    assert(res5[1] == true);
+    assert(res5[2] == 0);
+
+    string src6 = "foo(a, b, ";
+    e.setSource("test", src6, 0);
+    toks = e.activeTokens();
+    auto res6 = getIdentifierChain(toks, true);
+    assert(res6[0].map!(a => tokToString(a)).equal(["(", "foo"]));
+    assert(res6[1] == true);
+    assert(res6[2] == 2);
+
+    string src7 = "foo(a[5, 6], foo2(a, b(c, d)), ";
+    e.setSource("test", src7, 0);
+    toks = e.activeTokens();
+    auto res7 = getIdentifierChain(toks, true);
+    assert(res7[0].map!(a => tokToString(a)).equal(["(", "foo"]));
+    assert(res7[1] == true);
+    assert(res7[2] == 2);
 }
 
 struct TokenStream

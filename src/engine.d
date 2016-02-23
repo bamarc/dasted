@@ -168,7 +168,7 @@ public:
         return candidates.empty() ? null : candidates.front();
     }
 
-    Tuple!(ISymbol[], bool, int) complete(Offset pos)
+    Tuple!(ISymbolList, bool, int) complete(Offset pos)
     {
         debug trace("offset = ", pos);
         auto parent = findScope(pos);
