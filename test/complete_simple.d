@@ -115,3 +115,23 @@ unittest
     assert(symbol_a_inst_complete[0][0].dotAccess().map!(a => a.name())
                                        .equal(["foo", "foo"]));
 }
+
+unittest
+{
+    Engine engine = new Engine;
+    string sources = q"(
+        class A { int |m; }
+        A model;
+        auto a = model;
+        a.|m = 5;
+        )";
+    auto srcPos = getSourcePos(sources);
+    engine.setSource("test", srcPos.src, 0);
+
+    auto symbols = engine.complete(srcPos.pos[1]);
+
+    assert(symbols[1] == false);
+    assert(symbols[0].length == 1);
+    assert(symbols[0][0].name() == "m");
+    assert(symbols[0][0].position() == srcPos.pos[0]);
+}

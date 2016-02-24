@@ -24,7 +24,7 @@ class AutoVariableEvaluator : TypeEvaluator
     override ISymbol[] evaluate()
     {
         debug trace("auto var evaluation");
-        if (_results is null)
+        if (_results is null && _impl !is null)
         {
             _results = _impl.evaluate();
         }
