@@ -23,7 +23,7 @@ class AutoVariableEvaluator : TypeEvaluator
 
     override ISymbol[] evaluate()
     {
-        debug trace("auto var evaluation");
+        debug trace("auto var evaluation ", _results is null, " ",_impl is null);
         if (_results is null && _impl !is null)
         {
             _results = _impl.evaluate();
@@ -92,7 +92,7 @@ private:
                 {
                     auto ev = new UnaryEvaluator(result,
                         txt(un.identifierOrTemplateInstance.identifier));
-                        result = ev;
+                    result = ev;
                 }
             }
         }
