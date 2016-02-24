@@ -237,12 +237,12 @@ public:
                 return ISymbolList.init;
             }
         }
-        auto firstSymbText = s.curr.type == tok!"identifier" ? stxt(s.curr)
-                                                             : tokToString(s.curr.type);
-        debug trace("tok = <", tokToString(s.curr.type), "> ", isExact(), " ",
+        auto firstSymbText = tokToString(s.curr);
+        debug trace("tok = <", tokToString(s.curr), "> ", isExact(), " ",
             firstSymbText, ": ", offset(s.curr));
         ISymbol[] candidates = isExact() ? scopeSymbol.findSymbol(firstSymbText)
                                          : filtering(scopeSymbol.scopeAccess(), firstSymbText);
+        int[ParenthesisType.max + 1] parentheses;
         while (s.next())
         {
             debug trace("tok = <", tokToString(s.curr.type), "> ", txt(s.curr),
@@ -251,6 +251,30 @@ public:
             if (candidates.empty())
             {
                 return ISymbolList.init;
+            }
+            auto isParenthesis = s.curr.getParenthesisType();
+            if (isParenthesis[0] != ParenthesisType.NONE)
+            {
+                if (isParenthesis[1])
+                {
+                    ++parentheses[isParenthesis[0]];
+                }
+                else
+                {
+                    if (parentheses[isParenthesis[0]] > 0)
+                    {
+                        --parentheses[isParenthesis[0]];
+                    }
+                    else
+                    {
+                        warning("Invalid parentheses combination");
+                        break;
+                    }
+                }
+            }
+            if (parentheses[].any!(a => a > 0))
+            {
+                continue;
             }
             if (s.curr.type == tok!".")
             {
