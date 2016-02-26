@@ -108,7 +108,8 @@ public:
             {
                 _moduleSymbol.addScope(next_symbol);
             }
-            debug trace("AST processes ", debugString(next_symbol));
+            debug trace("AST processes ", debugString(next_symbol),
+                " and parent ", debugString(next_symbol.parent));
             debug (print_ast) log(repeat(' ', ast_depth++), T.stringof);
             static if (!shouldStop)
             {

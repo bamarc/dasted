@@ -23,7 +23,8 @@ class AutoVariableEvaluator : TypeEvaluator
 
     override ISymbol[] evaluate()
     {
-        debug trace("auto var evaluation ", _results is null, " ",_impl is null);
+        debug trace("auto var evaluation ", _results is null, " ",_impl is null, " ",
+            _symbol !is null ? debugString(_symbol) : "null");
         if (_results is null && _impl !is null)
         {
             _results = _impl.evaluate();
@@ -66,10 +67,31 @@ private:
                 return findSymbol(symb, [token]);
             }
         }
+
+        class NewExpressionEvaluator : TypeEvaluator
+        {
+            DType type;
+            this(const(NewExpression) newExpr)
+            {
+                if (newExpr !is null)
+                {
+                    type = toDType(newExpr.type);
+                }
+            }
+            override ISymbol[] evaluate()
+            {
+                return type.find(_symbol);
+            }
+        }
         override void visit(const UnaryExpression un)
         {
             debug trace("unary visit = ", un.identifierOrTemplateInstance is null ? null
                 : txt(un.identifierOrTemplateInstance.identifier));
+            if (un.newExpression !is null)
+            {
+                result = new NewExpressionEvaluator(un.newExpression);
+                return;
+            }
             un.accept(this);
             if (un.identifierOrTemplateInstance !is null)
             {

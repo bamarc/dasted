@@ -23,7 +23,7 @@ class AliasSymbol : DSymbol
         debug trace("Alias type = ", debugString(_info.type));
         if (type != DType.init)
         {
-            auto candidates = findType(this, _info.type);
+            auto candidates = findType(parent(), _info.type);
             return candidates.empty() ? null : candidates.front();
         }
         return null;

@@ -25,7 +25,7 @@ class ClassSymbol : TypedSymbol!(SymbolType.CLASS)
 
     auto baseClassSymbols()
     {
-        return _baseClasses.map!(a => findType(this, a)).join().filter!(a => a !is null);
+        return _baseClasses.map!(a => findType(parent(), a)).join().filter!(a => a !is null);
     }
 
     override ISymbol[] dotAccess()

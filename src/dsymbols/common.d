@@ -245,7 +245,7 @@ ISymbol[] findSymbol(R)(ISymbol symbol, R tokenChain)
     return declarations;
 }
 
-ISymbol[] findType(ISymbol symbol, DType type)
+ISymbol[] findType(ISymbol parent, DType type)
 {
     import std.range;
     if (type.evaluate !is null)
@@ -259,7 +259,7 @@ ISymbol[] findType(ISymbol symbol, DType type)
         return null;
     }
 
-    return findSymbol(symbol.parent, type.chain.map!(a => a.name));
+    return findSymbol(parent, type.chain.map!(a => a.name));
 }
 
 ISymbol[] evaluateType(ISymbol symbol)
@@ -269,7 +269,7 @@ ISymbol[] evaluateType(ISymbol symbol)
     {
         return null;
     }
-    return findType(symbol, symbol.type());
+    return findType(symbol.parent, symbol.type());
 }
 
 string debugString(const(ISymbol) s)

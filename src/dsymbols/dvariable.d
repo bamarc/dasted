@@ -22,7 +22,7 @@ class VariableSymbol : TypedSymbol!(SymbolType.VAR)
     override ISymbol[] dotAccess()
     {
         debug trace();
-        auto declarations = findType(this, type);
+        auto declarations = findType(parent(), type);
         if (declarations.empty())
         {
             return null;

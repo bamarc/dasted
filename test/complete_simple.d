@@ -148,3 +148,35 @@ unittest
     assert(symbols[0].length == 1);
     assert(symbols[0][0].type().asString() == "int");
 }
+
+unittest
+{
+    Engine engine = new Engine;
+    string sources = q"(
+        class A
+        {
+            this() {}
+            this(int a) { m = a; }
+            int |m;                 // 0
+        }
+        auto a = new A;
+        a.|m = 5;                   // 1
+        auto b = new A(4);
+        b.|m = 6;                   // 2
+        )";
+    auto srcPos = getSourcePos(sources);
+    engine.setSource("test", srcPos.src, 0);
+
+    auto symbols = engine.complete(srcPos.pos[1]);
+
+    assert(symbols[1] == false);
+    assert(symbols[0].length == 1);
+    assert(symbols[0][0].name() == "m");
+    assert(symbols[0][0].position() == srcPos.pos[0]);
+
+    symbols = engine.complete(srcPos.pos[2]);
+
+    assert(symbols[1] == false);
+    assert(symbols[0].length == 1);
+    assert(symbols[0][0].name() == "m");
+}
