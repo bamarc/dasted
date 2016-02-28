@@ -175,6 +175,10 @@ Tuple!(const(Token)[], bool, int) getIdentifierChain(R)(R range, bool complete)
         auto isParenthesis = getParenthesisType(range.back);
         if (isParenthesis[0] != ParenthesisType.NONE)
         {
+            if (parentheses[].all!(a => a == 0) && isParenthesis[0] == ParenthesisType.CURLY)
+            {
+                break;
+            }
             if (!isParenthesis[1])
             {
                 ++parentheses[isParenthesis[0]];
@@ -262,6 +266,13 @@ unittest
     assert(res7[0].map!(a => tokToString(a)).equal(["(", "foo"]));
     assert(res7[1] == true);
     assert(res7[2] == 2);
+
+    string src8 = "void test { } a.b";
+    e.setSource("test", src8, 0);
+    toks = e.activeTokens();
+    auto res8 = getIdentifierChain(toks, true);
+    assert(res8[0].map!(a => tokToString(a)).equal(["b", ".", "a"]));
+    assert(res8[1] == false);
 }
 
 struct TokenStream
