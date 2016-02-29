@@ -52,7 +52,8 @@ class ModuleSymbol : TypedSymbol!(SymbolType.MODULE)
     ISymbol findScope(Offset pos)
     {
         debug trace("pos = ", pos);
-        return scopes.findScope(pos);
+        auto scopeSymbol = scopes.findScope(pos);
+        return scopeSymbol is null ? this : scopeSymbol;
     }
 
     inout(ModuleCache) moduleCache() inout

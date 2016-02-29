@@ -211,3 +211,19 @@ unittest
     assert(symbols[0].length == 1);
     assert(symbols[0][0].name() == "m");
 }
+
+unittest
+{
+    Engine engine = new Engine;
+    string sources = q"(
+        module test.a.b;
+        import test.|;
+        )";
+    auto srcPos = getSourcePos(sources);
+    engine.setSource("test", srcPos.src, 0);
+
+    auto symbols = engine.complete(srcPos.pos[0]);
+
+    assert(symbols[1] == false);
+    assert(symbols[0].length == 0);
+}
