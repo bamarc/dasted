@@ -208,7 +208,7 @@ class SymbolFactory
 
     DBlock create(const Unittest test, SymbolState state)
     {
-        return new DBlock(fromBlock(safeNull(test).blockStatement.get));
+        return new DBlock(fromBlock(safeNull(test).blockStatement.get), SymbolSubType.UNITTEST);
     }
 
     AliasSymbol create(const AliasDeclaration decl, SymbolState state)

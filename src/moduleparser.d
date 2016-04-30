@@ -3,6 +3,7 @@ module moduleparser;
 import dparse.ast;
 import dparse.lexer;
 import dparse.parser;
+import dparse.rollback_allocator;
 import std.experimental.allocator;
 import std.experimental.allocator.building_blocks.allocator_list;
 import std.experimental.allocator.building_blocks.region;
@@ -19,7 +20,7 @@ private:
     Module _mod;
     LexerConfig _config;
     const(Token)[] _tokens;
-    ModuleAllocator _allocator;
+    RollbackAllocator* _allocator;
     StringCache* _scache;
 public:
     inout(Module) getModule() inout
@@ -50,7 +51,7 @@ public:
         this.src = src;
         _ast._scache = new StringCache(StringCache.defaultBucketCount);
         _ast._config.fileName = "";
-        _ast._allocator = new ModuleAllocator;
+        _ast._allocator = new RollbackAllocator;
         _ast._tokens = getTokensForParser(cast(ubyte[])src,
             _ast._config, _ast._scache);
         _ast._mod = parseModule(ast._tokens, "stdin", _ast._allocator,

@@ -1,6 +1,6 @@
 module messages;
 
-enum ubyte PROTOCOL_VERSION = 4;
+enum ubyte PROTOCOL_VERSION = 5;
 
 struct Location
 {
@@ -35,11 +35,22 @@ enum SymbolType : ubyte
     ALIAS = 15,
     TEMPLATE = 16,
     MIXIN_TEMPLATE = 17,
+    BLOCK = 18,
+}
+
+enum SymbolSubType : ubyte
+{
+    NO_SUBTYPE = 0,
+    IN,
+    OUT,
+    UNITTEST,
+    SCOPE,
 }
 
 struct MSymbol
 {
     SymbolType type;
+    SymbolSubType subType;
     Location location;
     string name;
     string typeName;

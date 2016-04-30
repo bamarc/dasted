@@ -21,6 +21,11 @@ class ForwardedSymbol : ISymbol
         return _impl.symbolType();
     }
 
+    override SymbolSubType symbolSubType() const
+    {
+        return _impl.symbolSubType();
+    }
+
     override string name() const
     {
         return _impl.name();

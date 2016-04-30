@@ -55,6 +55,11 @@ class DSymbol : ISymbol
         return _info.symbolType;
     }
 
+    override SymbolSubType symbolSubType() const
+    {
+        return SymbolSubType.NO_SUBTYPE;
+    }
+
     override string name() const
     {
         return _info.name;

@@ -23,6 +23,16 @@ enum SymbolType
     ENUM,
     ENUM_VAR,
     VAR,
+    BLOCK,
+}
+
+enum SymbolSubType
+{
+    NO_SUBTYPE = 0,
+    IN,
+    OUT,
+    UNITTEST,
+    SCOPE,
 }
 
 enum Visibility
@@ -111,6 +121,7 @@ alias ParameterList = const(Parameter)[];
 interface ISymbol
 {
     SymbolType symbolType() const;
+    SymbolSubType symbolSubType() const;
 
     string name() const;
     inout(DType) type() inout;

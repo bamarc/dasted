@@ -2,6 +2,7 @@ module convert;
 
 import messages;
 import dsymbols;
+import logger;
 
 import dparse.ast;
 import dparse.lexer;
@@ -10,6 +11,7 @@ import dparse.formatter;
 
 import std.array;
 import std.algorithm;
+import std.conv;
 
 alias messages.MSymbol MSymbol;
 
@@ -31,6 +33,7 @@ messages.SymbolType toUbyteType(dsymbols.SymbolType s)
     case dsymbols.SymbolType.ENUM:      return S.ENUM;
     case dsymbols.SymbolType.ENUM_VAR:  return S.ENUM_VARIABLE;
     case dsymbols.SymbolType.VAR:       return S.VARIABLE;
+    case dsymbols.SymbolType.BLOCK:     return S.BLOCK;
     }
 }
 
@@ -42,6 +45,7 @@ MSymbol toMSymbol(const(ISymbol) symbol)
         return s;
     }
     s.type = symbol.symbolType().toUbyteType();
+    s.subType = to!(messages.SymbolSubType)(to!ubyte(symbol.symbolSubType()));
     s.location.filename = symbol.fileName();
     s.parameters = toStringList(symbol.parameters());
     if (s.location.filename.empty())
