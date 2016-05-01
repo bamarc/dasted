@@ -106,7 +106,8 @@ class SymbolFactory
             }
         }
         return new ResultType(txt(decl.name), offset(decl.name),
-            fromBlock(safeNull(decl).structBody.get), baseClasses);
+            fromBlock(safeNull(decl).structBody.get), baseClasses,
+            decl.templateParameters.toParameters);
     }
 
     ClassSymbol create(const ClassDeclaration decl, SymbolState state)
@@ -146,7 +147,7 @@ class SymbolFactory
     StructSymbol create(const StructDeclaration decl, SymbolState state)
     {
         return new StructSymbol(txt(decl.name), offset(decl.name),
-            fromBlock(safeNull(decl).structBody.get));
+            fromBlock(safeNull(decl).structBody.get), decl.templateParameters.toParameters);
     }
 
     VariableSymbol[] create(const VariableDeclaration decl, SymbolState state)

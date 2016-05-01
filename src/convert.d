@@ -49,6 +49,7 @@ MSymbol toMSymbol(const(ISymbol) symbol)
     s.subType = to!(messages.SymbolSubType)(to!ubyte(symbol.symbolSubType()));
     s.location.filename = symbol.fileName();
     s.parameters = toStringList(symbol.parameters());
+    s.templateParameters = toStringList(symbol.templateParameters());
     if (s.location.filename.empty())
     {
         s.location.filename = "stdin";
@@ -74,7 +75,18 @@ MScope toMScope(const(ISymbol) symbol)
     return mscope;
 }
 
+string parameterToString(const(dsymbols.Parameter) param)
+{
+    string res = debugString(param.type);
+    if (!res.empty)
+    {
+        res ~= " ";
+    }
+    res ~= param.name;
+    return res;
+}
+
 string[] toStringList(const(ParameterList) params)
 {
-    return params.map!(a => debugString(a.type) ~ " " ~ a.name).array;
+    return params.map!(a => a.parameterToString).array;
 }

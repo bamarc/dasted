@@ -10,9 +10,9 @@ import std.array;
 class InterfaceSymbol : ClassSymbol
 {
     this(string name, Offset pos, ScopeBlock block,
-        DType[] baseInterfaces)
+        DType[] baseInterfaces, ParameterList templateParameters)
     {
-        super(name, pos, block, baseInterfaces);
+        super(name, pos, block, baseInterfaces, templateParameters);
         _info.symbolType = SymbolType.INTERFACE;
     }
 }

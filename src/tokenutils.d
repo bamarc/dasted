@@ -397,6 +397,43 @@ string[] toIdentifierChain(const(UnaryExpression) unaryExpr)
     return tokens;
 }
 
+dsymbols.common.Parameter toParameter(const(TemplateParameter) p)
+{
+    if (p is null)
+    {
+        return typeof(return).init;
+    }
+    debug trace(debugTypes(p));
+    if (p.templateTypeParameter !is null)
+    {
+        return typeof(return)(p.templateTypeParameter.identifier.txt);
+    }
+    if (p.templateValueParameter !is null)
+    {
+        return typeof(return)(p.templateValueParameter.identifier.txt,
+                              p.templateValueParameter.type.toDType);
+    }
+    return typeof(return).init;
+}
+
+ParameterList toParameters(const(TemplateParameterList) tpl)
+{
+    if (tpl is null)
+    {
+        return ParameterList.init;
+    }
+    return tpl.items.map!(a => a.toParameter).array;
+}
+
+ParameterList toParameters(const(TemplateParameters) tps)
+{
+    if (tps is null)
+    {
+        return ParameterList.init;
+    }
+    return tps.templateParameterList.toParameters;
+}
+
 auto debugStringUnsafe(T)(const(T) node)
     if (is(T : ASTNode))
 {
