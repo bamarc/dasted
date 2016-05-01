@@ -143,6 +143,7 @@ public:
     mixin VisitNode!(EnumMember, Visibility.INTERNAL, true);
     mixin VisitNode!(Unittest, Visibility.INTERNAL);
     mixin VisitNode!(AliasDeclaration, Visibility.INTERNAL, true);
+    mixin VisitNode!(TemplateDeclaration, Visibility.PUBLIC);
     override void visit(const Declaration decl)
     {
         _state.attributes ~= decl.attributes;

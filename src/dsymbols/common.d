@@ -64,6 +64,12 @@ struct ScopeBlock
         begin = b;
         end = e;
     }
+
+    this(ulong b, ulong e)
+    {
+        begin = cast(Offset)b;
+        end = cast(Offset)e;
+    }
 }
 
 struct Position

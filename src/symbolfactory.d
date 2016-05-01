@@ -223,4 +223,11 @@ class SymbolFactory
             offset(decl.initializers.front().name), toDType(decl.initializers.front().type),
             safeNull(decl).identifierList.identifiers.get.map!(a => txt(a)).array);
     }
+
+    TemplateSymbol create(const TemplateDeclaration decl, SymbolState state)
+    {
+        return new TemplateSymbol(decl.name.txt, decl.name.offset,
+                                  ScopeBlock(decl.startLocation, decl.endLocation),
+                                  decl.templateParameters.toParameters);
+    }
 }
