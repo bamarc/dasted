@@ -13,8 +13,6 @@ struct SymbolInfo
     string name;
     string fullname;
     DType type;
-    ISymbol[] parameters;
-    ISymbol[] templateParameters;
     Offset[] usage;
     Offset position;
     ScopeBlock scopeBlock;
@@ -81,6 +79,11 @@ class DSymbol : ISymbol
     }
 
     override ParameterList parameters() const
+    {
+        return ParameterList.init;
+    }
+
+    override ParameterList templateParameters() const
     {
         return ParameterList.init;
     }
@@ -184,12 +187,12 @@ class DSymbol : ISymbol
 
     override bool applyTemplateArguments(const DType[] tokens)
     {
-        return _info.templateParameters.length == tokens.length;
+        return true;
     }
 
     override bool applyArguments(const DType[] tokens)
     {
-        return _info.parameters.length == tokens.length;
+        return true;
     }
 
     override inout(ISymbol)[] children() inout

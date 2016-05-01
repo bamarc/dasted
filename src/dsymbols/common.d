@@ -129,6 +129,7 @@ interface ISymbol
     Offset position() const;
     string fileName() const;
     ParameterList parameters() const;
+    ParameterList templateParameters() const;
 
     ScopeBlock scopeBlock() const;
     final bool hasScope() const

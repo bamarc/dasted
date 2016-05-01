@@ -45,6 +45,12 @@ class ClassSymbol : TypedSymbol!(SymbolType.CLASS)
         return baseClassSymbols().map!(a => a.dotAccess()).join;
     }
 
+    override ParameterList templateParameters() const
+    {
+        return _templateParameters;
+    }
+
     DType[] _baseClasses;
     ThisSymbol _thisSymbol;
+    ParameterList _templateParameters;
 }

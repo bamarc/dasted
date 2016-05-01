@@ -32,5 +32,4 @@ class ASTCache
         _cache.set(fileName, parser);
         return parser.ast();
     }
-
 }

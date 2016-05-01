@@ -51,6 +51,11 @@ class ForwardedSymbol : ISymbol
         return _impl.parameters();
     }
 
+    override ParameterList templateParameters() const
+    {
+        return _impl.templateParameters();
+    }
+
     override ScopeBlock scopeBlock() const
     {
         return _impl.scopeBlock();
