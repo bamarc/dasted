@@ -31,7 +31,7 @@ class AliasSymbol : DSymbol
 
     override SymbolType symbolType() const
     {
-        return SymbolType.NO_TYPE;
+        return SymbolType.ALIAS;
     }
 
     private string[] _tokens;

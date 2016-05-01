@@ -34,6 +34,7 @@ messages.SymbolType toUbyteType(dsymbols.SymbolType s)
     case dsymbols.SymbolType.ENUM_VAR:  return S.ENUM_VARIABLE;
     case dsymbols.SymbolType.VAR:       return S.VARIABLE;
     case dsymbols.SymbolType.BLOCK:     return S.BLOCK;
+    case dsymbols.SymbolType.ALIAS:     return S.ALIAS;
     }
 }
 

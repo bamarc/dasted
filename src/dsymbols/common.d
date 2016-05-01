@@ -24,6 +24,7 @@ enum SymbolType
     ENUM_VAR,
     VAR,
     BLOCK,
+    ALIAS,
 }
 
 enum SymbolSubType
